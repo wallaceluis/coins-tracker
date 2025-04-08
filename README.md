@@ -4,7 +4,7 @@
 
 🔗 Acesse o projeto online: [coins-tracker-taupe.vercel.app](https://coins-tracker-taupe.vercel.app/)
 
-![Screenshot do Coins Tracker](vue-project\src\images\print-coins-tracker.png)
+![Screenshot do Coins Tracker](https://github.com/user-attachments/assets/faea61d8-7a07-4a02-a474-3e3a3b4830fa)
 
 ---
 
