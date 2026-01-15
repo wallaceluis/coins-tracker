@@ -1,85 +1,97 @@
 # 💰 Coins Tracker
 
-> Aplicação desenvolvida para exibir cotações atualizadas de criptomoedas, com foco em usabilidade, visual moderno e responsivo, e alternância entre modo claro e escuro.  
+![Coins Tracker Screenshot](src/assets/images/print-coins-tracker.png)
 
-🔗 Acesse o projeto online: [coins-tracker-taupe.vercel.app](https://coins-tracker-taupe.vercel.app/)
-
-![Screenshot do Coins Tracker](https://github.com/user-attachments/assets/faea61d8-7a07-4a02-a474-3e3a3b4830fa)
+> Aplicação desenvolvida para exibir cotações atualizadas de criptomoedas, conversores de moedas e acompanhamento de mercado.
 
 ---
 
-## ✨ Funcionalidades
+## 🇧🇷 Português
 
-- 🔍 Visualização em tempo real das principais criptomoedas (ex: Bitcoin, Ethereum, Solana).
-- 💱 Conversão automática de valores em **USD** e **BRL**.
-- 📉 Exibição da **variação percentual nas últimas 24h** com cores e ícones dinâmicos.
-- 🌓 Suporte ao **modo claro/escuro** com mudança completa de estilo.
-- 📱 Interface responsiva para dispositivos móveis.
+### 📝 Descrição
+O **Coins Tracker** é uma aplicação web moderna e responsiva que permite acompanhar o mercado de criptomoedas em tempo real. Com um design elegante em glassmorphism, o projeto oferece cotações precisas, conversão instantânea para diversas moedas fiduciárias e suporte a múltiplos idiomas.
 
----
+### ✨ Funcionalidades
+- **Cotações em Tempo Real**: Visualize o preço, valor de mercado e volume de criptomoedas populares.
+- **Conversor Inteligente**: Conversão instantânea entre criptomoedas e moedas fiduciárias (BRL, USD, EUR, GBP, JPY).
+- **Internacionalização (i18n)**: Suporte completo para **Português**, **Inglês** e **Espanhol**.
+- **Temas**: Alternância suave entre **Modo Claro** e **Modo Escuro**.
+- **Design Moderno**: Interface polida com efeitos de vidro (Glassmorphism) e animações fluídas.
+- **Arquitetura Modular**: Código organizado em Componentes, Composables e Services.
 
-## 🛠️ Tecnologias
-
-- [Vue 3](https://vuejs.org/)
-- [Vite](https://vitejs.dev/)
+### 🛠️ Tecnologias Utilizadas
+- [Vue 3](https://vuejs.org/) (Composition API)
 - [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
+- [Vue I18n](https://vue-i18n.intlify.dev/)
+- [Axios](https://axios-http.com/)
 - [CoinCap API](https://coincap.io/)
-- [ExchangeRate.host API](https://exchangerate.host/)
+- [ExchangeRate API](https://exchangerate.host/)
+
+### � Como Rodar
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/wallaceluis/coins-tracker.git
+   ```
+2. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
+3. **Configure as variáveis de ambiente:**
+   Renomeie `.env.example` para `.env.local` e insira suas chaves de API (CoinCap e ExchangeRate).
+4. **Execute o servidor:**
+   ```bash
+   npm run dev
+   ```
 
 ---
 
-## 📦 Instalação local
+## 🇺🇸 English
 
-1. Clone o repositório:
-```bash
-git clone https://github.com/wallaceluis/coins-tracker.git
-```
+### � Description
+**Coins Tracker** is a modern and responsive web application designed to track the cryptocurrency market in real-time. Featuring an elegant glassmorphism design, the project offers accurate quotes, instant conversion to various fiat currencies, and multi-language support.
 
-2. Acesse a pasta do projeto:
-```bash
-cd coins-tracker
-```
+### ✨ Features
+- **Real-Time Quotes**: View price, market cap, and volume of popular cryptocurrencies.
+- **Smart Converter**: Instant conversion between crypto and fiat currencies (USD, BRL, EUR, GBP, JPY).
+- **Internationalization (i18n)**: Full support for **English**, **Portuguese**, and **Spanish**.
+- **Themes**: Smooth toggle between **Light Mode** and **Dark Mode**.
+- **Modern Design**: Polished interface with Glassmorphism effects and fluid animations.
+- **Modular Architecture**: Code organized into Components, Composables, and Services.
 
-3. Instale as dependências:
-```bash
-npm install
-```
+### 🛠️ Technologies Used
+- [Vue 3](https://vuejs.org/) (Composition API)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Vue I18n](https://vue-i18n.intlify.dev/)
+- [Axios](https://axios-http.com/)
+- [CoinCap API](https://coincap.io/)
+- [ExchangeRate API](https://exchangerate.host/)
 
-4. Rode o projeto localmente:
-```bash
-npm run dev
-```
-
----
-
-## 📁 Estrutura de Pastas
-
-```bash
-📦src
- ┣ 📂components
- ┣ 📂assets
- ┣ 📜App.vue
- ┣ 📜main.ts
-```
-
----
-
-## 💡 Próximas melhorias
-
-- 📈 Adição de gráficos de variação das moedas.
-- 🌍 Suporte a múltiplos idiomas.
-- 🔒 Melhorias em segurança de consumo de API.
+### � How to Run
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/wallaceluis/coins-tracker.git
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Setup environment variables:**
+   Rename `.env.example` to `.env.local` and insert your API keys (CoinCap and ExchangeRate).
+4. **Run the server:**
+   ```bash
+   npm run dev
+   ```
 
 ---
 
-## 🧑‍💻 Desenvolvido por
+## 🧑‍💻 Author
 
 **Wallace Luis**  
 [![GitHub](https://img.shields.io/badge/GitHub-wallaceluis-black?logo=github)](https://github.com/wallaceluis)
 
----
-
-## 📜 Licença
-
-Este projeto está licenciado sob a licença MIT.
+## 📜 License
+This project is licensed under the MIT License.
