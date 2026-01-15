@@ -42,7 +42,7 @@
       <div class="grid grid-cols-2 gap-4">
           <div class="p-4 rounded-xl border transition-colors duration-200"
               :class="darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'">
-            <p class="text-xs uppercase tracking-wider opacity-60 mb-1">Market Cap ({{ selectedFiat }})</p>
+            <p class="text-xs uppercase tracking-wider opacity-60 mb-1">{{ $t('card.marketCap') }} ({{ selectedFiat }})</p>
             <p class="text-lg font-bold tabular-nums">
                 {{ formatCompact(convertValue(crypto.marketCapUsd), selectedFiat) }}
             </p>
@@ -53,7 +53,7 @@
 
           <div class="p-4 rounded-xl border transition-colors duration-200"
               :class="darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'">
-            <p class="text-xs uppercase tracking-wider opacity-60 mb-1">Volume 24h ({{ selectedFiat }})</p>
+            <p class="text-xs uppercase tracking-wider opacity-60 mb-1">{{ $t('card.volume24h') }} ({{ selectedFiat }})</p>
             <p class="text-lg font-bold tabular-nums">
                 {{ formatCompact(convertValue(crypto.volumeUsd24Hr), selectedFiat) }}
             </p>

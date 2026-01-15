@@ -10,21 +10,23 @@
       <div>
         <h1 class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r"
             :class="darkMode ? 'from-white to-slate-400' : 'from-slate-900 to-slate-600'">
-          Coins Tracker
+          {{ $t('header.title') }}
         </h1>
+        <p class="text-xs font-medium tracking-wider uppercase opacity-60 ml-0.5">{{ $t('header.subtitle') }}</p>
       </div>
     </div>
 
     <div class="flex items-center gap-3">
+      
       <div class="relative group">
         <select 
-          :value="selectedFiat"
-          @input="$emit('update:selectedFiat', ($event.target as HTMLSelectElement).value)"
+          :value="selectedLanguage"
+          @input="$emit('update:selectedLanguage', ($event.target as HTMLSelectElement).value)"
           class="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-bold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
           :class="darkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-50'"
         >
-          <option v-for="currency in fiatCurrencies" :key="currency.code" :value="currency.code">
-            {{ currency.code }}
+          <option v-for="lang in languages" :key="lang.code" :value="lang.code">
+            {{ lang.flag }} {{ lang.code.toUpperCase() }}
           </option>
         </select>
         <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none opacity-50">
@@ -48,12 +50,12 @@ import { SunIcon, MoonIcon, ChevronDownIcon } from '@heroicons/vue/24/solid'
 
 defineProps<{
   darkMode: boolean
-  selectedFiat: string
-  fiatCurrencies: Array<{ code: string; name: string }>
+  selectedLanguage: string
+  languages: Array<{ code: string; name: string; flag: string }>
 }>()
 
 defineEmits<{
   (e: 'toggleDarkMode'): void
-  (e: 'update:selectedFiat', value: string): void
+  (e: 'update:selectedLanguage', value: string): void
 }>()
 </script>

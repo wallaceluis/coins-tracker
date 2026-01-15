@@ -15,10 +15,10 @@
       
       <TheHeader 
         :darkMode="darkMode"
-        :fiatCurrencies="fiatCurrencies"
-        :selectedFiat="selectedFiat"
+        :selectedLanguage="currentLanguage"
+        :languages="languages"
         @toggleDarkMode="toggleDarkMode"
-        @update:selectedFiat="selectedFiat = $event"
+        @update:selectedLanguage="setLanguage"
       />
 
       <CryptoSelector 
@@ -26,6 +26,9 @@
         :topCryptos="topCryptos"
         :selectedSymbol="selectedCryptoData?.symbol"
         :darkMode="darkMode"
+        :fiatCurrencies="fiatCurrencies"
+        :selectedFiat="selectedFiat"
+        @update:selectedFiat="selectedFiat = $event"
       />
 
       <main class="flex-grow">
@@ -52,16 +55,16 @@
 
         <div v-else class="flex flex-col justify-center items-center py-32 opacity-50">
            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mb-4"></div>
-           <p>Carregando dados do mercado...</p>
+           <p>{{ $t('loading') }}</p>
         </div>
       </main>
       
       <footer class="mt-12 text-center pb-8">
         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium opacity-40 hover:opacity-100 transition-opacity"
              :class="darkMode ? 'bg-slate-900' : 'bg-slate-100'">
-          <span>Powered by CoinCap API</span>
+          <span>{{ $t('footer.poweredBy') }}</span>
           <span>•</span>
-          <span>Atualizado em tempo real</span>
+          <span>{{ $t('footer.updated') }}</span>
         </div>
       </footer>
     </div>
@@ -73,6 +76,7 @@ import { ref, onMounted } from 'vue'
 import { useCrypto } from '@/composables/useCrypto'
 import { useCurrency } from '@/composables/useCurrency'
 import { useTheme } from '@/composables/useTheme'
+import { useLanguage } from '@/composables/useLanguage'
 
 import TheHeader from '@/components/TheHeader.vue'
 import CryptoSelector from '@/components/CryptoSelector.vue'
@@ -82,6 +86,7 @@ import CryptoConverter from '@/components/CryptoConverter.vue'
 const { darkMode, toggleDarkMode } = useTheme()
 const { selectedCryptoId, selectedCryptoData, topCryptos, getTopCryptos, getCryptoData } = useCrypto()
 const { selectedFiat, fiatCurrencies, getExchangeRates, convertValue } = useCurrency()
+const { currentLanguage, languages, setLanguage } = useLanguage()
 
 const inputFiat = ref<number | null>(null)
 

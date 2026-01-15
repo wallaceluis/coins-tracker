@@ -10,14 +10,14 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                 </svg>
               </div>
-              <h3 class="text-lg font-bold">Conversor Rápido</h3>
+              <h3 class="text-lg font-bold">{{ $t('converter.title') }}</h3>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
               
               <div class="relative">
                   <div class="flex justify-between mb-1.5 ml-1">
-                      <label class="text-xs font-bold uppercase opacity-60">Você paga</label>
+                      <label class="text-xs font-bold uppercase opacity-60">{{ $t('converter.pay') }}</label>
                       <span class="text-xs font-bold text-teal-500">{{ selectedFiat }}</span>
                   </div>
                   
@@ -42,7 +42,7 @@
 
               <div class="relative">
                   <div class="flex justify-between mb-1.5 ml-1">
-                      <label class="text-xs font-bold uppercase opacity-60">Você recebe</label>
+                      <label class="text-xs font-bold uppercase opacity-60">{{ $t('converter.receive') }}</label>
                       <span class="text-xs font-bold text-indigo-500">{{ cryptoSymbol }}</span>
                   </div>
                   <div class="relative">
