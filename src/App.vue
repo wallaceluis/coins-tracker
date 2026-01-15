@@ -6,10 +6,5 @@ import { RouterView } from 'vue-router';
   <RouterView />
 </template>
 
-<style>
-header {
-  text-align: center;
-  padding: 10px;
-}
-</style>
+
 
