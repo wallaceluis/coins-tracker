@@ -2,8 +2,10 @@
   <header class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
     <div class="flex items-center gap-3">
       <div class="relative">
-        <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full blur-md opacity-60"></div>
-        <img :src="logo" alt="Logo Coins Tracker" class="relative w-10 h-10 rounded-full ring-2 ring-white/20 shadow-xl" />
+        <div class="absolute inset-0 bg-gradient-to-tr rounded-full blur-md opacity-60" 
+        :class="darkMode ? 'from-indigo-500 to-purple-500' : 'from-purple-600 to-purple-600'"></div>
+        <img :src="logo" alt="Logo Coins Tracker" class="relative w-10 h-10 rounded-full ring-2 ring-white/20 shadow-xl"
+        :class="darkMode ? 'bg-transparent' : 'bg-black/60'" />
       </div>
       <div>
         <h1 class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r"
