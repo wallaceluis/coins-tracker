@@ -1,11 +1,10 @@
 # Coins Tracker
 
 [![CI](https://github.com/wallaceluis/coins-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/wallaceluis/coins-tracker/actions/workflows/ci.yml)
-[![Deploy](https://github.com/wallaceluis/coins-tracker/actions/workflows/deploy.yml/badge.svg)](https://github.com/wallaceluis/coins-tracker/actions/workflows/deploy.yml)
 
 Painel de criptomoedas com as 20 maiores moedas do mercado, gráfico dos últimos 7 dias e conversor, cotado em **BRL, USD, EUR, GBP ou JPY**. Os dados se atualizam sozinhos a cada minuto e o app funciona em português, inglês e espanhol, nos temas claro e escuro.
 
-**Demo:** https://wallaceluis.github.io/coins-tracker/
+**Demo:** https://coins-tracker-taupe.vercel.app
 
 ![Coins Tracker no tema escuro](docs/screenshot-dark.png)
 
@@ -36,7 +35,7 @@ Painel de criptomoedas com as 20 maiores moedas do mercado, gráfico dos último
 | Gráficos   | SVG próprio, sem biblioteca de gráficos (~1 KB)                   |
 | Dados      | [CoinGecko API](https://www.coingecko.com/en/api) (pública, sem chave) |
 | Qualidade  | Vitest + Vue Test Utils, ESLint, vue-tsc, GitHub Actions          |
-| Deploy     | Vite → GitHub Pages                                               |
+| Deploy     | Vercel (deploy automático a cada push no `main`)                  |
 
 ## Arquitetura
 
@@ -85,7 +84,7 @@ VITE_COINGECKO_API_KEY=sua_chave
 
 Crypto dashboard showing the top 20 coins by market cap, a 7-day chart and a two-way converter, priced in BRL, USD, EUR, GBP or JPY. Data refreshes every minute (paused while the tab is hidden), and the UI is available in Portuguese, English and Spanish with light and dark themes.
 
-Built with Vue 3, TypeScript, Tailwind CSS 4 and VueUse, on the public CoinGecko API (no key needed). Charts are hand-rolled SVG. Tested with Vitest and checked on every push by GitHub Actions; deployed to GitHub Pages.
+Built with Vue 3, TypeScript, Tailwind CSS 4 and VueUse, on the public CoinGecko API (no key needed). Charts are hand-rolled SVG. Tested with Vitest and checked on every push by GitHub Actions; deployed on Vercel.
 
 ```bash
 npm install && npm run dev
