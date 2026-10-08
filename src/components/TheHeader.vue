@@ -1,61 +1,75 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { MoonIcon, SunIcon } from '@heroicons/vue/24/outline'
+import logo from '@/assets/images/logo-coins-tracker.png'
+import { LANGUAGES, setLocale } from '@/i18n'
+import { FIAT_CURRENCIES, type FiatCode } from '@/types/market'
+
+defineProps<{ isDark: boolean }>()
+const currency = defineModel<FiatCode>('currency', { required: true })
+defineEmits<{ toggleTheme: [] }>()
+
+const { t, locale } = useI18n()
+</script>
+
 <template>
-  <header class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-    <div class="flex items-center gap-3">
-      <div class="relative">
-        <div class="absolute inset-0 bg-gradient-to-tr rounded-full blur-md opacity-60" 
-        :class="darkMode ? 'from-indigo-500 to-purple-500' : 'from-purple-600 to-purple-600'"></div>
-        <img :src="logo" alt="Logo Coins Tracker" class="relative w-10 h-10 rounded-full ring-2 ring-white/20 shadow-xl"
-        :class="darkMode ? 'bg-transparent' : 'bg-black/60'" />
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+      <img :src="logo" alt="" class="w-10 h-10 rounded-xl ring-1 ring-black/5 dark:ring-white/10" />
+      <div class="leading-tight">
+        <h1 class="text-xl font-bold tracking-tight">{{ t('title') }}</h1>
+        <p class="text-xs text-muted">{{ t('subtitle') }}</p>
       </div>
-      <div>
-        <h1 class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r"
-            :class="darkMode ? 'from-white to-slate-400' : 'from-slate-900 to-slate-600'">
-          {{ $t('header.title') }}
-        </h1>
-        <p class="text-xs font-medium tracking-wider uppercase opacity-60 ml-0.5">{{ $t('header.subtitle') }}</p>
-      </div>
+      <!-- No mobile o botão de tema fica ao lado do logo para não sobrar sozinho numa linha -->
+      <button
+        type="button"
+        class="icon-btn ml-auto sm:hidden"
+        :aria-label="t('theme')"
+        @click="$emit('toggleTheme')"
+      >
+        <SunIcon v-if="isDark" class="w-5 h-5" />
+        <MoonIcon v-else class="w-5 h-5" />
+      </button>
     </div>
 
-    <div class="flex items-center gap-3">
-      
-      <div class="relative group">
-        <select 
-          :value="selectedLanguage"
-          @input="$emit('update:selectedLanguage', ($event.target as HTMLSelectElement).value)"
-          class="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-sm font-bold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          :class="darkMode ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-50'"
+    <div class="flex flex-wrap items-center gap-2">
+      <div role="radiogroup" :aria-label="t('currency')" class="segmented">
+        <button
+          v-for="code in FIAT_CURRENCIES"
+          :key="code"
+          type="button"
+          role="radio"
+          :aria-checked="currency === code"
+          :class="{ active: currency === code }"
+          @click="currency = code"
         >
-          <option v-for="lang in languages" :key="lang.code" :value="lang.code">
-            {{ lang.flag }} {{ lang.code.toUpperCase() }}
-          </option>
-        </select>
-        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none opacity-50">
-          <ChevronDownIcon class="w-3 h-3" />
-        </div>
+          {{ code }}
+        </button>
       </div>
 
-      <button @click="$emit('toggleDarkMode')"
-              class="p-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              :class="darkMode ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 shadow-sm'">
-        <SunIcon v-if="!darkMode" class="w-5 h-5" />
+      <div role="radiogroup" :aria-label="t('language')" class="segmented">
+        <button
+          v-for="lang in LANGUAGES"
+          :key="lang.code"
+          type="button"
+          role="radio"
+          :aria-checked="locale === lang.code"
+          :class="{ active: locale === lang.code }"
+          @click="setLocale(lang.code)"
+        >
+          {{ lang.label }}
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="icon-btn hidden sm:inline-flex"
+        :aria-label="t('theme')"
+        @click="$emit('toggleTheme')"
+      >
+        <SunIcon v-if="isDark" class="w-5 h-5" />
         <MoonIcon v-else class="w-5 h-5" />
       </button>
     </div>
   </header>
 </template>
-
-<script setup lang="ts">
-import logo from '@/assets/images/logo-coins-tracker.png'
-import { SunIcon, MoonIcon, ChevronDownIcon } from '@heroicons/vue/24/solid'
-
-defineProps<{
-  darkMode: boolean
-  selectedLanguage: string
-  languages: Array<{ code: string; name: string; flag: string }>
-}>()
-
-defineEmits<{
-  (e: 'toggleDarkMode'): void
-  (e: 'update:selectedLanguage', value: string): void
-}>()
-</script>

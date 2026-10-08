@@ -1,118 +1,112 @@
+<script setup lang="ts">
+import { computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { useMarket } from '@/composables/useMarket'
+import { useTheme } from '@/composables/useTheme'
+import TheHeader from '@/components/TheHeader.vue'
+import MarketList from '@/components/MarketList.vue'
+import CoinDetail from '@/components/CoinDetail.vue'
+import CryptoConverter from '@/components/CryptoConverter.vue'
+
+const { t, locale } = useI18n()
+const { isDark, toggleTheme } = useTheme()
+const { coins, selected, selectedId, currency, loading, error, lastUpdated, refresh } = useMarket()
+
+const updatedLabel = computed(() =>
+  lastUpdated.value
+    ? t('updated', {
+        time: lastUpdated.value.toLocaleTimeString(locale.value, {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      })
+    : '',
+)
+const errorMessage = computed(() =>
+  error.value === 'rate_limited' ? t('errRate') : t('errGeneric'),
+)
+
+onMounted(refresh)
+
+// No mobile a lista fica abaixo do detalhe: ao escolher uma moeda, volta ao topo para mostrá-la
+watch(selectedId, () => {
+  if (window.matchMedia('(max-width: 1023px)').matches)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+</script>
+
 <template>
-  <div :class="darkMode ? 'bg-slate-950 text-white selection:bg-indigo-500/30' : 'bg-slate-50 text-slate-900 selection:bg-blue-500/30'" 
-       class="min-h-screen transition-colors duration-500 font-sans relative overflow-hidden">
-    
-    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"
-           :class="darkMode ? 'bg-indigo-600' : 'bg-blue-300'"></div>
-      <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"
-           :class="darkMode ? 'bg-cyan-600' : 'bg-purple-300'"></div>
-      <div class="absolute bottom-[-20%] left-[20%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"
-           :class="darkMode ? 'bg-pink-600' : 'bg-pink-300'"></div>
-    </div>
+  <div class="min-h-screen">
+    <div class="backdrop" aria-hidden="true" />
 
-    <div class="relative z-10 max-w-3xl mx-auto px-4 py-8 flex flex-col min-h-screen">
-      
-      <TheHeader 
-        :darkMode="darkMode"
-        :selectedLanguage="currentLanguage"
-        :languages="languages"
-        @toggleDarkMode="toggleDarkMode"
-        @update:selectedLanguage="setLanguage"
-      />
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <TheHeader v-model:currency="currency" :is-dark="isDark" @toggle-theme="toggleTheme()" />
 
-      <CryptoSelector 
-        v-model="selectedCryptoId"
-        :topCryptos="topCryptos"
-        :selectedSymbol="selectedCryptoData?.symbol"
-        :darkMode="darkMode"
-        :fiatCurrencies="fiatCurrencies"
-        :selectedFiat="selectedFiat"
-        @update:selectedFiat="selectedFiat = $event"
-      />
+      <div
+        v-if="error"
+        role="alert"
+        class="panel p-4 flex flex-wrap items-center gap-3 border-down/30"
+      >
+        <ExclamationTriangleIcon class="w-5 h-5 text-down shrink-0" />
+        <div class="flex-1 min-w-0 text-sm">
+          <p class="font-semibold">{{ t('errTitle') }}</p>
+          <p class="text-muted">
+            {{ errorMessage }}<template v-if="coins.length"> · {{ t('stale') }}</template>
+          </p>
+        </div>
+        <button type="button" class="btn" @click="refresh">{{ t('retry') }}</button>
+      </div>
 
-      <main class="flex-grow">
-        <div v-if="selectedCryptoData" class="space-y-6">
-          
-          <CryptoCard 
-            :crypto="selectedCryptoData"
-            :darkMode="darkMode"
-            :selectedFiat="selectedFiat"
-            :convertValue="convertValue"
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
+        <div class="space-y-6 min-w-0">
+          <template v-if="selected">
+            <CoinDetail :coin="selected" :currency="currency" />
+            <CryptoConverter :coin="selected" :currency="currency" />
+          </template>
+          <div v-else-if="loading" class="panel p-6 space-y-4" :aria-label="t('loading')">
+            <div class="flex items-center gap-3">
+              <div class="skeleton w-12 h-12 rounded-full" />
+              <div class="space-y-2">
+                <div class="skeleton h-5 w-40" />
+                <div class="skeleton h-3 w-24" />
+              </div>
+            </div>
+            <div class="skeleton h-56 w-full" />
+          </div>
+        </div>
+
+        <div class="lg:sticky lg:top-6">
+          <MarketList
+            v-model:selected-id="selectedId"
+            :coins="coins"
+            :currency="currency"
+            :loading="loading"
           />
-
-          <CryptoConverter 
-            v-if="selectedCryptoData.priceUsd"
-            :darkMode="darkMode"
-            v-model="inputFiat"
-            :selectedFiat="selectedFiat"
-            :cryptoSymbol="selectedCryptoData.symbol"
-            :cryptoPriceUsd="selectedCryptoData.priceUsd"
-            :convertValue="convertValue"
-          />
-
         </div>
+      </div>
 
-        <div v-else class="flex flex-col justify-center items-center py-32 opacity-50">
-           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mb-4"></div>
-           <p>{{ $t('loading') }}</p>
-        </div>
-      </main>
-      
-      <footer class="mt-12 text-center pb-8">
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium opacity-40 hover:opacity-100 transition-opacity"
-             :class="darkMode ? 'bg-slate-900' : 'bg-slate-100'">
-          <span>{{ $t('footer.poweredBy') }}</span>
-          <span>•</span>
-          <span>{{ $t('footer.updated') }}</span>
-        </div>
+      <footer
+        class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted pt-2"
+      >
+        <a
+          href="https://www.coingecko.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:underline"
+        >
+          {{ t('poweredBy') }}
+        </a>
+        <span aria-hidden="true">·</span>
+        <span>{{ t('autoRefresh') }}</span>
+        <template v-if="updatedLabel">
+          <span aria-hidden="true">·</span>
+          <span class="inline-flex items-center gap-1">
+            <ArrowPathIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
+            {{ updatedLabel }}
+          </span>
+        </template>
       </footer>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useCrypto } from '@/composables/useCrypto'
-import { useCurrency } from '@/composables/useCurrency'
-import { useTheme } from '@/composables/useTheme'
-import { useLanguage } from '@/composables/useLanguage'
-
-import TheHeader from '@/components/TheHeader.vue'
-import CryptoSelector from '@/components/CryptoSelector.vue'
-import CryptoCard from '@/components/CryptoCard.vue'
-import CryptoConverter from '@/components/CryptoConverter.vue'
-
-const { darkMode, toggleDarkMode } = useTheme()
-const { selectedCryptoId, selectedCryptoData, topCryptos, getTopCryptos, getCryptoData } = useCrypto()
-const { selectedFiat, fiatCurrencies, getExchangeRates, convertValue } = useCurrency()
-const { currentLanguage, languages, setLanguage } = useLanguage()
-
-const inputFiat = ref<number | null>(null)
-
-onMounted(async () => {
-  await Promise.all([
-    getExchangeRates(),
-    getTopCryptos(),
-    getCryptoData()
-  ])
-})
-</script>
-
-<style scoped>
-.animate-blob {
-  animation: blob 7s infinite;
-}
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
-}
-</style>

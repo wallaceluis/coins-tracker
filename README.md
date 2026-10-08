@@ -1,97 +1,92 @@
-# 💰 Coins Tracker
+# Coins Tracker
 
-![Coins Tracker Screenshot](src/assets/images/print-coins-tracker.png)
+[![CI](https://github.com/wallaceluis/coins-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/wallaceluis/coins-tracker/actions/workflows/ci.yml)
+[![Deploy](https://github.com/wallaceluis/coins-tracker/actions/workflows/deploy.yml/badge.svg)](https://github.com/wallaceluis/coins-tracker/actions/workflows/deploy.yml)
 
-> Aplicação desenvolvida para exibir cotações atualizadas de criptomoedas, conversores de moedas e acompanhamento de mercado.
+Painel de criptomoedas com as 20 maiores moedas do mercado, gráfico dos últimos 7 dias e conversor, cotado em **BRL, USD, EUR, GBP ou JPY**. Os dados se atualizam sozinhos a cada minuto e o app funciona em português, inglês e espanhol, nos temas claro e escuro.
 
----
+**Demo:** https://wallaceluis.github.io/coins-tracker/
 
-## 🇧🇷 Português
+![Coins Tracker no tema escuro](docs/screenshot-dark.png)
 
-### 📝 Descrição
-O **Coins Tracker** é uma aplicação web moderna e responsiva que permite acompanhar o mercado de criptomoedas em tempo real. Com um design elegante em glassmorphism, o projeto oferece cotações precisas, conversão instantânea para diversas moedas fiduciárias e suporte a múltiplos idiomas.
+<table>
+  <tr>
+    <td width="68%"><img src="docs/screenshot-light.png" alt="Tema claro" /></td>
+    <td><img src="docs/screenshot-mobile.png" alt="Versão mobile" /></td>
+  </tr>
+</table>
 
-### ✨ Funcionalidades
-- **Cotações em Tempo Real**: Visualize o preço, valor de mercado e volume de criptomoedas populares.
-- **Conversor Inteligente**: Conversão instantânea entre criptomoedas e moedas fiduciárias (BRL, USD, EUR, GBP, JPY).
-- **Internacionalização (i18n)**: Suporte completo para **Português**, **Inglês** e **Espanhol**.
-- **Temas**: Alternância suave entre **Modo Claro** e **Modo Escuro**.
-- **Design Moderno**: Interface polida com efeitos de vidro (Glassmorphism) e animações fluídas.
-- **Arquitetura Modular**: Código organizado em Componentes, Composables e Services.
+## Funcionalidades
 
-### 🛠️ Tecnologias Utilizadas
-- [Vue 3](https://vuejs.org/) (Composition API)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Vue I18n](https://vue-i18n.intlify.dev/)
-- [Axios](https://axios-http.com/)
-- [CoinCap API](https://coincap.io/)
-- [ExchangeRate API](https://exchangerate.host/)
+- **Mercado ao vivo**: top 20 por valor de mercado, com minigráfico de 7 dias e variação de 24h, busca por nome ou símbolo.
+- **Detalhe da moeda**: preço, variação de 24h e 7 dias, gráfico de 7 dias, valor de mercado, volume, máxima/mínima de 24h, oferta em circulação e máxima histórica.
+- **Conversor nos dois sentidos**: quanto de cripto o seu dinheiro compra, ou quanto vale uma quantidade de cripto.
+- **Atualização automática** a cada 60 segundos, pausada quando a aba está em segundo plano e retomada ao voltar.
+- **Falhas tratadas**: se a API cair ou bater o limite de requisições, o app avisa, mantém os últimos dados na tela e oferece "tentar de novo".
+- **Preferências salvas**: moeda, idioma, tema e moeda selecionada ficam guardados no navegador. O tema segue o sistema na primeira visita.
+- **Acessível**: navegação por teclado, foco visível, `aria` nos controles e respeito a "reduzir movimento".
 
-### � Como Rodar
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/wallaceluis/coins-tracker.git
-   ```
-2. **Instale as dependências:**
-   ```bash
-   npm install
-   ```
-3. **Configure as variáveis de ambiente:**
-   Renomeie `.env.example` para `.env.local` e insira suas chaves de API (CoinCap e ExchangeRate).
-4. **Execute o servidor:**
-   ```bash
-   npm run dev
-   ```
+## Stack
 
----
+| Camada     | Tecnologias                                                       |
+| ---------- | ----------------------------------------------------------------- |
+| Interface  | Vue 3 (Composition API, `<script setup>`), TypeScript, Tailwind CSS 4 |
+| Estado     | Composables + VueUse (`useStorage`, `useDark`, `useDocumentVisibility`) |
+| i18n       | Vue I18n (pt, en, es) com `Intl.NumberFormat` por idioma          |
+| Gráficos   | SVG próprio, sem biblioteca de gráficos (~1 KB)                   |
+| Dados      | [CoinGecko API](https://www.coingecko.com/en/api) (pública, sem chave) |
+| Qualidade  | Vitest + Vue Test Utils, ESLint, vue-tsc, GitHub Actions          |
+| Deploy     | Vite → GitHub Pages                                               |
 
-## 🇺🇸 English
+## Arquitetura
 
-### � Description
-**Coins Tracker** is a modern and responsive web application designed to track the cryptocurrency market in real-time. Featuring an elegant glassmorphism design, the project offers accurate quotes, instant conversion to various fiat currencies, and multi-language support.
+```
+src/
+├── services/coinGecko.ts     # única chamada HTTP (fetch + AbortController)
+├── composables/useMarket.ts  # estado do mercado, seleção, auto-refresh
+├── composables/useTheme.ts   # tema claro/escuro persistido
+├── utils/                    # formatação (Intl), conversão, geometria do gráfico
+├── components/               # TheHeader, MarketList, CoinDetail, CryptoConverter, SparkLine
+└── views/HomeView.vue        # layout e estados de carregamento/erro
+```
 
-### ✨ Features
-- **Real-Time Quotes**: View price, market cap, and volume of popular cryptocurrencies.
-- **Smart Converter**: Instant conversion between crypto and fiat currencies (USD, BRL, EUR, GBP, JPY).
-- **Internationalization (i18n)**: Full support for **English**, **Portuguese**, and **Spanish**.
-- **Themes**: Smooth toggle between **Light Mode** and **Dark Mode**.
-- **Modern Design**: Polished interface with Glassmorphism effects and fluid animations.
-- **Modular Architecture**: Code organized into Components, Composables, and Services.
+A CoinGecko já devolve os preços na moeda pedida (`vs_currency`), então não é preciso uma segunda API de câmbio. Trocar de moeda cancela a requisição anterior para que uma resposta atrasada não sobrescreva a nova.
 
-### 🛠️ Technologies Used
-- [Vue 3](https://vuejs.org/) (Composition API)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Vue I18n](https://vue-i18n.intlify.dev/)
-- [Axios](https://axios-http.com/)
-- [CoinCap API](https://coincap.io/)
-- [ExchangeRate API](https://exchangerate.host/)
+## Como rodar
 
-### � How to Run
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/wallaceluis/coins-tracker.git
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Setup environment variables:**
-   Rename `.env.example` to `.env.local` and insert your API keys (CoinCap and ExchangeRate).
-4. **Run the server:**
-   ```bash
-   npm run dev
-   ```
+Requer Node.js 20 ou mais novo.
+
+```bash
+git clone https://github.com/wallaceluis/coins-tracker.git
+cd coins-tracker
+npm install
+npm run dev
+```
+
+Não precisa de chave de API. Se quiser um limite de requisições maior, crie uma chave "Demo" gratuita na CoinGecko e coloque em `.env.local`:
+
+```env
+VITE_COINGECKO_API_KEY=sua_chave
+```
+
+### Scripts
+
+| Comando              | O que faz                                  |
+| -------------------- | ------------------------------------------ |
+| `npm run dev`        | Servidor de desenvolvimento                |
+| `npm test`           | Testes unitários (Vitest)                  |
+| `npm run lint`       | ESLint                                     |
+| `npm run type-check` | Checagem de tipos (vue-tsc)                |
+| `npm run build`      | Checagem de tipos + build de produção      |
 
 ---
 
-## 🧑‍💻 Author
+## English
 
-**Wallace Luis**  
-[![GitHub](https://img.shields.io/badge/GitHub-wallaceluis-black?logo=github)](https://github.com/wallaceluis)
+Crypto dashboard showing the top 20 coins by market cap, a 7-day chart and a two-way converter, priced in BRL, USD, EUR, GBP or JPY. Data refreshes every minute (paused while the tab is hidden), and the UI is available in Portuguese, English and Spanish with light and dark themes.
 
-## 📜 License
-This project is licensed under the MIT License.
+Built with Vue 3, TypeScript, Tailwind CSS 4 and VueUse, on the public CoinGecko API (no key needed). Charts are hand-rolled SVG. Tested with Vitest and checked on every push by GitHub Actions; deployed to GitHub Pages.
+
+```bash
+npm install && npm run dev
+```

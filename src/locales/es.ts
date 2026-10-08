@@ -1,24 +1,35 @@
 export default {
-    header: {
-        title: 'Coins Tracker',
-        subtitle: 'Panel Cripto'
-    },
-    selector: {
-        label: 'Seleccionar Criptomoneda'
-    },
-    card: {
-        change24h: 'Variación 24h',
-        marketCap: 'Capitalización',
-        volume24h: 'Volumen 24h'
-    },
-    converter: {
-        title: 'Conversor Rápido',
-        pay: 'Tú pagas',
-        receive: 'Tú recibes'
-    },
-    footer: {
-        poweredBy: 'Desarrollado por CoinCap API',
-        updated: 'Actualizado en tiempo real'
-    },
-    loading: 'Cargando datos del mercado...'
+  title: 'Coins Tracker',
+  subtitle: 'Panel cripto',
+  search: 'Buscar moneda…',
+  market: 'Mercado',
+  marketHint: 'Top 20 por capitalización',
+  rank: 'Rank',
+  price: 'Precio',
+  change24h: '24h',
+  change7d: '7 días',
+  chart7d: 'Últimos 7 días',
+  marketCap: 'Capitalización',
+  volume24h: 'Volumen 24h',
+  high24h: 'Máximo 24h',
+  low24h: 'Mínimo 24h',
+  supply: 'En circulación',
+  ath: 'Máximo histórico',
+  converter: 'Conversor',
+  pay: 'Pagas',
+  receive: 'Recibes',
+  swap: 'Invertir conversión',
+  noResults: 'No se encontraron monedas',
+  loading: 'Cargando mercado…',
+  updated: 'Actualizado {time}',
+  autoRefresh: 'Se actualiza cada 60s',
+  poweredBy: 'Datos: CoinGecko',
+  errTitle: 'No se pudieron cargar los datos',
+  errRate: 'Se alcanzó el límite de la API. Inténtalo de nuevo en unos segundos.',
+  errGeneric: 'Revisa tu conexión e inténtalo de nuevo.',
+  retry: 'Reintentar',
+  stale: 'Mostrando los últimos datos cargados',
+  theme: 'Cambiar tema',
+  language: 'Idioma',
+  currency: 'Moneda',
 }

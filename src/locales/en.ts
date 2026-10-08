@@ -1,24 +1,35 @@
 export default {
-    header: {
-        title: 'Coins Tracker',
-        subtitle: 'Crypto Dashboard'
-    },
-    selector: {
-        label: 'Select Cryptocurrency'
-    },
-    card: {
-        change24h: '24h Change',
-        marketCap: 'Market Cap',
-        volume24h: '24h Volume'
-    },
-    converter: {
-        title: 'Quick Converter',
-        pay: 'You pay',
-        receive: 'You receive'
-    },
-    footer: {
-        poweredBy: 'Powered by CoinCap API',
-        updated: 'Updated in real-time'
-    },
-    loading: 'Loading market data...'
+  title: 'Coins Tracker',
+  subtitle: 'Crypto dashboard',
+  search: 'Search coin…',
+  market: 'Market',
+  marketHint: 'Top 20 by market cap',
+  rank: 'Rank',
+  price: 'Price',
+  change24h: '24h',
+  change7d: '7 days',
+  chart7d: 'Last 7 days',
+  marketCap: 'Market cap',
+  volume24h: '24h volume',
+  high24h: '24h high',
+  low24h: '24h low',
+  supply: 'Circulating supply',
+  ath: 'All-time high',
+  converter: 'Converter',
+  pay: 'You pay',
+  receive: 'You receive',
+  swap: 'Swap conversion',
+  noResults: 'No coins found',
+  loading: 'Loading market…',
+  updated: 'Updated {time}',
+  autoRefresh: 'Refreshes every 60s',
+  poweredBy: 'Data: CoinGecko',
+  errTitle: "Couldn't load market data",
+  errRate: 'API rate limit reached. Try again in a few seconds.',
+  errGeneric: 'Check your connection and try again.',
+  retry: 'Try again',
+  stale: 'Showing the last loaded data',
+  theme: 'Toggle theme',
+  language: 'Language',
+  currency: 'Currency',
 }

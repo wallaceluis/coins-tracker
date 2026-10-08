@@ -1,38 +1,52 @@
-export const formatCurrency = (value: number | string, currency: string) => {
-    if (!value) return '---'
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(Number(value))
+const LOCALES: Record<string, string> = { pt: 'pt-BR', en: 'en-US', es: 'es-ES' }
+
+export const toLocale = (lang: string) => LOCALES[lang] ?? 'en-US'
+
+const isMissing = (value: number | null | undefined): value is null | undefined =>
+  value === null || value === undefined || Number.isNaN(value)
+
+/** Preço com casas decimais adaptadas: moedas abaixo de 1 precisam de mais precisão. */
+export function formatPrice(value: number | null | undefined, currency: string, lang = 'pt') {
+  if (isMissing(value)) return '—'
+  const abs = Math.abs(value)
+  const digits = abs >= 1 ? 2 : abs >= 0.01 ? 4 : 8
+  return new Intl.NumberFormat(toLocale(lang), {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: currency === 'JPY' && abs >= 1 ? 0 : 2,
+    maximumFractionDigits: currency === 'JPY' && abs >= 1 ? 0 : digits,
+  }).format(value)
 }
 
-export const formatCompact = (value: number | string, currency: string = 'USD') => {
-    if (!value) return '---'
-    return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : undefined, {
-        style: 'currency',
-        currency: currency,
-        notation: 'compact',
-        maximumFractionDigits: 2
-    }).format(Number(value))
+export function formatCompact(value: number | null | undefined, currency: string, lang = 'pt') {
+  if (isMissing(value)) return '—'
+  return new Intl.NumberFormat(toLocale(lang), {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
-export const formatPercent = (value: number | string) => {
-    if (!value) return '0.00%'
-    const n = Number(value)
-    return `${n.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        signDisplay: 'never'
-    })}%`
+export function formatPercent(value: number | null | undefined, lang = 'pt', signed = true) {
+  if (isMissing(value)) return '—'
+  return new Intl.NumberFormat(toLocale(lang), {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    signDisplay: signed ? 'exceptZero' : 'never',
+  }).format(value / 100)
 }
 
-export const formatFiat = (value: number, currency: string) => {
-    return value.toLocaleString(undefined, {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    })
+export function formatAmount(value: number | null | undefined, lang = 'pt', maxDigits = 8) {
+  if (isMissing(value)) return '—'
+  return new Intl.NumberFormat(toLocale(lang), { maximumFractionDigits: maxDigits }).format(value)
+}
+
+export function formatCompactNumber(value: number | null | undefined, lang = 'pt') {
+  if (isMissing(value)) return '—'
+  return new Intl.NumberFormat(toLocale(lang), {
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  }).format(value)
 }

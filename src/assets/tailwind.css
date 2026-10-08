@@ -1,4 +1,201 @@
-@import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-up: #10b981;
+  --color-down: #f43f5e;
+  --color-accent: #6366f1;
+}
+
+/* Tokens de superfície por tema */
+:root {
+  color-scheme: light;
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --line: rgb(15 23 42 / 0.08);
+  --muted: #64748b;
+  --text: #0f172a;
+  --chart: rgb(99 102 241 / 0.04);
+  --field: #f8fafc;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #070b14;
+  --panel: rgb(15 20 33 / 0.85);
+  --line: rgb(148 163 184 / 0.12);
+  --muted: #8a94a8;
+  --text: #e8ecf4;
+  --chart: rgb(99 102 241 / 0.06);
+  --field: rgb(255 255 255 / 0.03);
+}
+
+@utility text-muted {
+  color: var(--muted);
+}
+@utility border-line {
+  border-color: var(--line);
+}
+@utility bg-chart {
+  background-color: var(--chart);
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60rem 30rem at 10% -10%, rgb(99 102 241 / 0.12), transparent 60%),
+      radial-gradient(50rem 30rem at 100% 0%, rgb(16 185 129 / 0.08), transparent 60%);
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 8px 24px -12px rgb(15 23 42 / 0.12);
+    backdrop-filter: blur(12px);
+  }
+  .field {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--line);
+    background: var(--field);
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+    outline: none;
+    transition:
+      border-color 150ms,
+      box-shadow 150ms;
+  }
+  .field:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgb(99 102 241 / 0.2);
+  }
+  .unit {
+    position: absolute;
+    right: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .segmented {
+    display: inline-flex;
+    padding: 0.1875rem;
+    border-radius: 0.625rem;
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .segmented button {
+    padding: 0.3125rem 0.625rem;
+    border-radius: 0.4375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+  .segmented button:hover {
+    color: var(--text);
+  }
+  .segmented button.active {
+    background: var(--color-accent);
+    color: white;
+  }
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--muted);
+    transition:
+      color 150ms,
+      border-color 150ms;
+  }
+  .icon-btn:hover {
+    color: var(--text);
+    border-color: var(--color-accent);
+  }
+  .btn {
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--color-accent);
+    color: white;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.75rem;
+    transition: background-color 120ms;
+  }
+  .row:hover {
+    background: rgb(99 102 241 / 0.06);
+  }
+  .row.selected {
+    background: rgb(99 102 241 / 0.12);
+    box-shadow: inset 2px 0 0 var(--color-accent);
+  }
+  .skeleton {
+    border-radius: 0.5rem;
+    background: linear-gradient(
+      90deg,
+      var(--line) 25%,
+      rgb(148 163 184 / 0.2) 50%,
+      var(--line) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
