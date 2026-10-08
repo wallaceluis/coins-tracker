@@ -3,10 +3,16 @@ import { mount } from '@vue/test-utils'
 import i18n from '@/i18n'
 import MarketList from '../MarketList.vue'
 import { COINS } from '@/test/fixtures'
+import { coinToAsset } from '@/types/asset'
 
 const mountList = (selectedId = 'bitcoin') =>
   mount(MarketList, {
-    props: { coins: COINS, currency: 'BRL', loading: false, selectedId },
+    props: {
+      assets: COINS.map((c) => coinToAsset(c, 'BRL')),
+      loading: false,
+      hint: 'Top 20',
+      selectedId,
+    },
     global: { plugins: [i18n] },
   })
 

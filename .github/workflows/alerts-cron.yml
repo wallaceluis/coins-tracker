@@ -1,0 +1,30 @@
+name: Price alerts
+
+# Dispara a verificação dos alertas na Vercel a cada 15 minutos.
+# Secrets necessários no repositório: APP_URL e CRON_SECRET (o mesmo valor configurado na Vercel).
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /api/cron/check-alerts
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::notice::APP_URL/CRON_SECRET not configured, skipping."
+            exit 0
+          fi
+          response=$(curl -sS --fail-with-body --max-time 90 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/check-alerts")
+          echo "$response"
+          echo "### Alert check" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$response" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

@@ -126,6 +126,35 @@
     background: var(--color-accent);
     color: white;
   }
+  .tabs {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .tabs button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+  .tabs button:hover {
+    color: var(--text);
+  }
+  .tabs button.active {
+    background: var(--color-accent);
+    color: white;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
   .icon-btn {
     display: inline-flex;
     align-items: center;

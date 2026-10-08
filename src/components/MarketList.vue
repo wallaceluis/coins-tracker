@@ -2,12 +2,12 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
-import type { Coin, FiatCode } from '@/types/market'
+import type { Asset } from '@/types/asset'
 import { formatPrice } from '@/utils/formatters'
 import ChangeBadge from './ChangeBadge.vue'
 import SparkLine from './SparkLine.vue'
 
-const props = defineProps<{ coins: Coin[]; currency: FiatCode; loading: boolean }>()
+const props = defineProps<{ assets: Asset[]; loading: boolean; hint: string }>()
 const selectedId = defineModel<string>('selectedId', { required: true })
 
 const { t, locale } = useI18n()
@@ -15,9 +15,9 @@ const query = ref('')
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
-  if (!q) return props.coins
-  return props.coins.filter(
-    (c) => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q),
+  if (!q) return props.assets
+  return props.assets.filter(
+    (a) => a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q),
   )
 })
 </script>
@@ -27,7 +27,7 @@ const filtered = computed(() => {
     <div class="p-4 pb-3 border-b border-line">
       <div class="flex items-baseline justify-between mb-3">
         <h2 class="font-semibold">{{ t('market') }}</h2>
-        <span class="text-xs text-muted">{{ t('marketHint') }}</span>
+        <span class="text-xs text-muted">{{ hint }}</span>
       </div>
       <label class="relative block">
         <span class="sr-only">{{ t('search') }}</span>
@@ -42,11 +42,11 @@ const filtered = computed(() => {
     </div>
 
     <ul
-      class="overflow-y-auto lg:max-h-[calc(100vh-14rem)] p-2"
+      class="overflow-y-auto lg:max-h-[calc(100vh-16rem)] p-2"
       role="listbox"
       :aria-label="t('market')"
     >
-      <template v-if="loading && !coins.length">
+      <template v-if="loading && !assets.length">
         <li v-for="n in 8" :key="n" class="flex items-center gap-3 p-3">
           <div class="skeleton w-8 h-8 rounded-full" />
           <div class="flex-1 space-y-1.5">
@@ -57,49 +57,55 @@ const filtered = computed(() => {
         </li>
       </template>
 
-      <li v-for="coin in filtered" :key="coin.id">
+      <li v-for="(asset, index) in filtered" :key="asset.id">
         <button
           type="button"
           role="option"
-          :aria-selected="coin.id === selectedId"
+          :aria-selected="asset.id === selectedId"
           class="row"
-          :class="{ selected: coin.id === selectedId }"
-          @click="selectedId = coin.id"
+          :class="{ selected: asset.id === selectedId }"
+          @click="selectedId = asset.id"
         >
           <span class="w-5 text-xs text-muted tabular-nums text-right">{{
-            coin.market_cap_rank
+            asset.rank ?? index + 1
           }}</span>
           <img
-            :src="coin.image"
-            :alt="''"
+            v-if="asset.image"
+            :src="asset.image"
+            alt=""
             width="32"
             height="32"
             loading="lazy"
-            class="w-8 h-8 rounded-full"
+            class="w-8 h-8 rounded-full bg-white object-contain"
           />
+          <span
+            v-else
+            class="w-8 h-8 rounded-full bg-accent/15 text-accent text-[10px] font-bold grid place-items-center"
+          >
+            {{ asset.symbol.slice(0, 4) }}
+          </span>
           <span class="flex-1 min-w-0 text-left">
-            <span class="block font-medium truncate">{{ coin.name }}</span>
-            <span class="block text-xs text-muted uppercase">{{ coin.symbol }}</span>
+            <span class="block font-medium truncate">{{
+              asset.kind === 'stock' ? asset.symbol : asset.name
+            }}</span>
+            <span class="block text-xs text-muted truncate">{{
+              asset.kind === 'stock' ? asset.name : asset.symbol
+            }}</span>
           </span>
           <span class="hidden sm:block w-16 h-7">
-            <SparkLine
-              :points="coin.sparkline_in_7d?.price ?? []"
-              :width="64"
-              :height="28"
-              :max-points="28"
-            />
+            <SparkLine :points="asset.history" :width="64" :height="28" :max-points="28" />
           </span>
           <span class="text-right">
             <span class="block text-sm font-medium tabular-nums">
-              {{ formatPrice(coin.current_price, currency, locale) }}
+              {{ formatPrice(asset.price, asset.currency, locale) }}
             </span>
-            <ChangeBadge :value="coin.price_change_percentage_24h" />
+            <ChangeBadge :value="asset.changeDay" />
           </span>
         </button>
       </li>
 
       <li
-        v-if="!loading && coins.length && !filtered.length"
+        v-if="!loading && assets.length && !filtered.length"
         class="p-6 text-center text-sm text-muted"
       >
         {{ t('noResults') }}

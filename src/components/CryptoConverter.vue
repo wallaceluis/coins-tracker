@@ -1,32 +1,44 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowsUpDownIcon } from '@heroicons/vue/24/outline'
-import type { Coin, FiatCode } from '@/types/market'
+import type { Asset } from '@/types/asset'
 import { cryptoToFiat, fiatToCrypto } from '@/utils/convert'
 import { formatAmount, formatPrice } from '@/utils/formatters'
 
-const props = defineProps<{ coin: Coin; currency: FiatCode }>()
+const props = defineProps<{ asset: Asset }>()
 const { t, locale } = useI18n()
 
 const amount = ref<number | null>(1000)
-/** true: fiat → cripto; false: cripto → fiat */
+/** true: dinheiro → ativo; false: ativo → dinheiro */
 const fromFiat = ref(true)
 
-const fromCode = computed(() => (fromFiat.value ? props.currency : props.coin.symbol.toUpperCase()))
-const toCode = computed(() => (fromFiat.value ? props.coin.symbol.toUpperCase() : props.currency))
+const fromCode = computed(() => (fromFiat.value ? props.asset.currency : props.asset.symbol))
+const toCode = computed(() => (fromFiat.value ? props.asset.symbol : props.asset.currency))
 
 const result = computed(() => {
   const value = amount.value ?? 0
   return fromFiat.value
-    ? formatAmount(fiatToCrypto(value, props.coin.current_price), locale.value, 8)
-    : formatPrice(cryptoToFiat(value, props.coin.current_price), props.currency, locale.value)
+    ? formatAmount(
+        fiatToCrypto(value, props.asset.price),
+        locale.value,
+        props.asset.kind === 'stock' ? 2 : 8,
+      )
+    : formatPrice(cryptoToFiat(value, props.asset.price), props.asset.currency, locale.value)
 })
 
 function swap() {
   fromFiat.value = !fromFiat.value
-  amount.value = fromFiat.value ? 1000 : 1
+  amount.value = fromFiat.value ? 1000 : props.asset.kind === 'stock' ? 100 : 1
 }
+
+watch(
+  () => props.asset.kind,
+  () => {
+    fromFiat.value = true
+    amount.value = 1000
+  },
+)
 </script>
 
 <template>
@@ -59,7 +71,9 @@ function swap() {
       </button>
 
       <div>
-        <span class="text-xs text-muted">{{ t('receive') }}</span>
+        <span class="text-xs text-muted">{{
+          t(fromFiat && asset.kind === 'stock' ? 'buys' : 'receive')
+        }}</span>
         <output
           class="field mt-1 flex items-center justify-between py-3 text-lg font-semibold tabular-nums bg-accent/5"
         >
@@ -70,7 +84,7 @@ function swap() {
     </div>
 
     <p class="mt-3 text-xs text-muted tabular-nums">
-      1 {{ coin.symbol.toUpperCase() }} = {{ formatPrice(coin.current_price, currency, locale) }}
+      1 {{ asset.symbol }} = {{ formatPrice(asset.price, asset.currency, locale) }}
     </p>
   </section>
 </template>

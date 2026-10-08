@@ -5,7 +5,7 @@ import logo from '@/assets/images/logo-coins-tracker.png'
 import { LANGUAGES, setLocale } from '@/i18n'
 import { FIAT_CURRENCIES, type FiatCode } from '@/types/market'
 
-defineProps<{ isDark: boolean }>()
+defineProps<{ isDark: boolean; showCurrency?: boolean }>()
 const currency = defineModel<FiatCode>('currency', { required: true })
 defineEmits<{ toggleTheme: [] }>()
 
@@ -33,7 +33,12 @@ const { t, locale } = useI18n()
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <div role="radiogroup" :aria-label="t('currency')" class="segmented">
+      <div
+        v-if="showCurrency !== false"
+        role="radiogroup"
+        :aria-label="t('currency')"
+        class="segmented"
+      >
         <button
           v-for="code in FIAT_CURRENCIES"
           :key="code"

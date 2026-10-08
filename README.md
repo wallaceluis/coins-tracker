@@ -1,91 +1,119 @@
-# Coins Tracker
+# Market Tracker
 
 [![CI](https://github.com/wallaceluis/coins-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/wallaceluis/coins-tracker/actions/workflows/ci.yml)
+[![Price alerts](https://github.com/wallaceluis/coins-tracker/actions/workflows/alerts-cron.yml/badge.svg)](https://github.com/wallaceluis/coins-tracker/actions/workflows/alerts-cron.yml)
 
-Painel de criptomoedas com as 20 maiores moedas do mercado, gráfico dos últimos 7 dias e conversor, cotado em **BRL, USD, EUR, GBP ou JPY**. Os dados se atualizam sozinhos a cada minuto e o app funciona em português, inglês e espanhol, nos temas claro e escuro.
+Painel de **criptomoedas e ações da B3** com gráficos, conversor e **alertas de preço por e-mail**. Qualquer pessoa pode criar um alerta sem cadastro: basta informar o e-mail e o preço-alvo, confirmar pelo link recebido e pronto.
 
 **Demo:** https://coins-tracker-taupe.vercel.app
 
-![Coins Tracker no tema escuro](docs/screenshot-dark.png)
+![Aba Bolsa no tema escuro](docs/screenshot-dark.png)
 
 <table>
   <tr>
-    <td width="68%"><img src="docs/screenshot-light.png" alt="Tema claro" /></td>
-    <td><img src="docs/screenshot-mobile.png" alt="Versão mobile" /></td>
+    <td width="50%"><img src="docs/screenshot-alert.png" alt="Criando um alerta" /></td>
+    <td width="50%"><img src="docs/email-alert.png" alt="E-mail de alerta" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshot-light.png" alt="Tema claro" /></td>
+    <td><img src="docs/screenshot-manage.png" alt="Página Meus alertas" /></td>
   </tr>
 </table>
 
 ## Funcionalidades
 
-- **Mercado ao vivo**: top 20 por valor de mercado, com minigráfico de 7 dias e variação de 24h, busca por nome ou símbolo.
-- **Detalhe da moeda**: preço, variação de 24h e 7 dias, gráfico de 7 dias, valor de mercado, volume, máxima/mínima de 24h, oferta em circulação e máxima histórica.
-- **Conversor nos dois sentidos**: quanto de cripto o seu dinheiro compra, ou quanto vale uma quantidade de cripto.
-- **Atualização automática** a cada 60 segundos, pausada quando a aba está em segundo plano e retomada ao voltar.
-- **Falhas tratadas**: se a API cair ou bater o limite de requisições, o app avisa, mantém os últimos dados na tela e oferece "tentar de novo".
-- **Preferências salvas**: moeda, idioma, tema e moeda selecionada ficam guardados no navegador. O tema segue o sistema na primeira visita.
-- **Acessível**: navegação por teclado, foco visível, `aria` nos controles e respeito a "reduzir movimento".
-
-## Stack
-
-| Camada     | Tecnologias                                                       |
-| ---------- | ----------------------------------------------------------------- |
-| Interface  | Vue 3 (Composition API, `<script setup>`), TypeScript, Tailwind CSS 4 |
-| Estado     | Composables + VueUse (`useStorage`, `useDark`, `useDocumentVisibility`) |
-| i18n       | Vue I18n (pt, en, es) com `Intl.NumberFormat` por idioma          |
-| Gráficos   | SVG próprio, sem biblioteca de gráficos (~1 KB)                   |
-| Dados      | [CoinGecko API](https://www.coingecko.com/en/api) (pública, sem chave) |
-| Qualidade  | Vitest + Vue Test Utils, ESLint, vue-tsc, GitHub Actions          |
-| Deploy     | Vercel (deploy automático a cada push no `main`)                  |
+- **Duas abas**:
+  - **Cripto**: top 20 da CoinGecko, gráfico de 7 dias, cotação em BRL, USD, EUR, GBP ou JPY.
+  - **Bolsa**: principais ações da B3 pela brapi.dev, com gráfico do último mês, máximas e mínimas do dia e de 52 semanas.
+- **Alertas por e-mail** ("avise quando PETR4 cair para R$ 36"):
+  - Sem cadastro, com confirmação por e-mail (double opt-in): ninguém consegue inscrever o e-mail de outra pessoa.
+  - Dispara uma vez ao cruzar o alvo e só rearma quando o preço volta com folga de 0,5%, então não chega um e-mail a cada oscilação.
+  - Página "Meus alertas" e link de remoção em todo e-mail, com descadastro de um clique (`List-Unsubscribe`) no Gmail e no Outlook.
+  - Limites contra abuso: 10 alertas ativos por e-mail, 5 pedidos pendentes por hora e um campo honeypot.
+- **Conversor nos dois sentidos**: quanto de cripto ou quantas ações o seu dinheiro compra, e o contrário.
+- **Atualização automática**: a cada 60 s para cripto e 5 min para ações, pausada com a aba em segundo plano.
+- **Interface**: 3 idiomas, tema claro/escuro que segue o sistema, acessível por teclado e responsiva.
 
 ## Arquitetura
 
+```mermaid
+flowchart LR
+  subgraph Vercel
+    FE[Vue 3 SPA] -->|/api/quotes| Q[quotes.ts]
+    FE -->|/api/alerts| A[alerts/*.ts]
+    C[cron/check-alerts.ts]
+  end
+  FE -->|direto| CG[(CoinGecko)]
+  Q --> Cache[(Postgres<br/>quote_cache)] --> BR[(brapi.dev)]
+  A --> DB[(Postgres<br/>alerts)]
+  A --> RS[Resend]
+  GH[GitHub Actions<br/>a cada 15 min] -->|Bearer CRON_SECRET| C
+  C --> DB & CG & Cache
+  C --> RS
 ```
-src/
-├── services/coinGecko.ts     # única chamada HTTP (fetch + AbortController)
-├── composables/useMarket.ts  # estado do mercado, seleção, auto-refresh
-├── composables/useTheme.ts   # tema claro/escuro persistido
-├── utils/                    # formatação (Intl), conversão, geometria do gráfico
-├── components/               # TheHeader, MarketList, CoinDetail, CryptoConverter, SparkLine
-└── views/HomeView.vue        # layout e estados de carregamento/erro
+
+- **Front**: Vue 3 (Composition API), TypeScript, Tailwind CSS 4, VueUse e gráficos em SVG próprio.
+- **API**: funções serverless da Vercel na pasta `api/` (Web `Request`/`Response`). O token da brapi nunca vai para o navegador.
+- **Banco**: Postgres via [`postgres`](https://github.com/porsager/postgres). O esquema é criado sozinho no primeiro acesso (`server/schema.ts`).
+- **Cache de cotações da B3**: 15 min durante o pregão e 6 h fora dele, no Postgres e na CDN da Vercel, para caber no plano grátis da brapi.
+- **Cron**: o GitHub Actions chama `/api/cron/check-alerts` a cada 15 min. Ações só são verificadas no horário do pregão.
+
+```
+api/                 rotas serverless (quotes, alerts, alerts/confirm|manage|unsubscribe, cron)
+server/              lógica do backend: banco, cotações, regras dos alertas, e-mails
+shared/              tipos usados pelo front e pelo back
+src/                 app Vue (views, components, composables)
 ```
 
-A CoinGecko já devolve os preços na moeda pedida (`vs_currency`), então não é preciso uma segunda API de câmbio. Trocar de moeda cancela a requisição anterior para que uma resposta atrasada não sobrescreva a nova.
+## Configuração (tudo no plano grátis)
 
-## Como rodar
+1. **Banco**: no projeto da Vercel, vá em *Storage → Create Database → Neon (Postgres)* e conecte ao projeto. A Vercel cria a variável `DATABASE_URL` sozinha. Supabase também funciona; nesse caso use a URL do *connection pooler*.
+2. **brapi**: crie uma conta em [brapi.dev](https://brapi.dev) e copie o token.
+3. **Resend**: com o domínio já verificado, crie uma API key em *API Keys*.
+4. **Variáveis na Vercel** (*Settings → Environment Variables*):
 
-Requer Node.js 20 ou mais novo.
+   | Variável         | Valor                                                     |
+   | ---------------- | --------------------------------------------------------- |
+   | `DATABASE_URL`   | criada pela integração do Neon                            |
+   | `BRAPI_TOKEN`    | token da brapi                                            |
+   | `RESEND_API_KEY` | chave do Resend                                           |
+   | `ALERTS_FROM`    | `Market Tracker <alertas@wallaceluis.com.br>`             |
+   | `APP_URL`        | `https://coins-tracker-taupe.vercel.app`                  |
+   | `CRON_SECRET`    | um texto aleatório longo (ex.: `openssl rand -hex 32`)    |
+
+5. **Secrets no GitHub** (*Settings → Secrets and variables → Actions*): `APP_URL` e `CRON_SECRET` com os mesmos valores.
+6. Faça um novo deploy na Vercel e rode o workflow **Price alerts** manualmente uma vez (*Actions → Price alerts → Run workflow*) para conferir.
+
+> O GitHub pausa workflows agendados em repositórios públicos sem nenhum commit há 60 dias; se isso acontecer, é só reativar em *Actions*. Para não depender disso, dá para apontar um serviço gratuito como o [cron-job.org](https://cron-job.org) para a mesma URL com o cabeçalho `Authorization`.
+
+## Como rodar localmente
 
 ```bash
-git clone https://github.com/wallaceluis/coins-tracker.git
-cd coins-tracker
 npm install
-npm run dev
+npm run dev          # só o front (a aba Bolsa e os alertas precisam da API)
+npx vercel dev       # front + funções /api, lendo as variáveis de .env.local
 ```
 
-Não precisa de chave de API. Se quiser um limite de requisições maior, crie uma chave "Demo" gratuita na CoinGecko e coloque em `.env.local`:
+Copie `.env.example` para `.env.local` e preencha o que for usar.
 
-```env
-VITE_COINGECKO_API_KEY=sua_chave
+### Testes
+
+| Comando              | O que faz                                                         |
+| -------------------- | ----------------------------------------------------------------- |
+| `npm test`           | Testes do front e do back (Vitest)                                |
+| `npm run lint`       | ESLint                                                            |
+| `npm run type-check` | vue-tsc no front e tsc no backend                                 |
+
+Os testes de integração dos alertas rodam contra um **Postgres real**, com CoinGecko, brapi e Resend simulados. Eles cobrem criação, confirmação por link, disparo único, rearme, horário do pregão, cache de cotações, remoção, limites e autenticação do cron. Ficam desligados sem `TEST_DATABASE_URL`; o CI sobe um Postgres para eles:
+
+```bash
+TEST_DATABASE_URL=postgres://postgres@localhost:5432/market_test npm test
 ```
-
-### Scripts
-
-| Comando              | O que faz                                  |
-| -------------------- | ------------------------------------------ |
-| `npm run dev`        | Servidor de desenvolvimento                |
-| `npm test`           | Testes unitários (Vitest)                  |
-| `npm run lint`       | ESLint                                     |
-| `npm run type-check` | Checagem de tipos (vue-tsc)                |
-| `npm run build`      | Checagem de tipos + build de produção      |
 
 ---
 
 ## English
 
-Crypto dashboard showing the top 20 coins by market cap, a 7-day chart and a two-way converter, priced in BRL, USD, EUR, GBP or JPY. Data refreshes every minute (paused while the tab is hidden), and the UI is available in Portuguese, English and Spanish with light and dark themes.
+Crypto **and Brazilian stock (B3)** dashboard with charts, a converter and **email price alerts**. Anyone can create an alert without signing up: enter an email and a target price, then confirm through the link (double opt-in). Alerts fire once when the target is crossed and re-arm with a 0.5% margin; every email has a one-click unsubscribe.
 
-Built with Vue 3, TypeScript, Tailwind CSS 4 and VueUse, on the public CoinGecko API (no key needed). Charts are hand-rolled SVG. Tested with Vitest and checked on every push by GitHub Actions; deployed on Vercel.
-
-```bash
-npm install && npm run dev
-```
+Vue 3 + TypeScript + Tailwind CSS on Vercel, with serverless functions for the brapi proxy, alert API and cron; Postgres (Neon/Supabase) for alerts and quote caching; Resend for email; GitHub Actions triggers the check every 15 minutes. Integration tests run against a real Postgres in CI.
