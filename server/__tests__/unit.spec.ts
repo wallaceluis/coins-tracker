@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { GET as getMarkets } from '../../api/markets'
 import { evaluate } from '../alerts/evaluate'
 import { validateAlertInput } from '../alerts/validate'
 import { confirmationEmail, money, triggeredEmail } from '../email/templates'
@@ -143,5 +144,34 @@ describe('TICKER_PATTERN', () => {
 
   it('rejects malformed tickers', () => {
     for (const t of ['PETR', '3BSA3', 'petr4', 'PETR4;', 'AB12']) expect(TICKER_PATTERN.test(t)).toBe(false)
+  })
+})
+
+describe('GET /api/markets', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const call = (qs: string) => getMarkets(new Request(`https://x.test/api/markets${qs}`))
+
+  it('proxies CoinGecko with a CDN cache header', async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response('[{"id":"bitcoin"}]', { status: 200 })))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await call('?vs_currency=USD&per_page=20')
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual([{ id: 'bitcoin' }])
+    expect(res.headers.get('cache-control')).toContain('s-maxage=60')
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain('vs_currency=usd')
+  })
+
+  it('rejects unknown currencies and page sizes', async () => {
+    vi.stubGlobal('fetch', vi.fn())
+    expect((await call('?vs_currency=xyz')).status).toBe(400)
+    expect((await call('?per_page=500')).status).toBe(400)
+  })
+
+  it('passes rate limiting through as 429', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('', { status: 429 }))))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect((await call('')).status).toBe(429)
   })
 })
