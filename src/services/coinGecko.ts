@@ -1,6 +1,5 @@
 import type { Coin, FiatCode } from '@/types/market'
 
-
 export class ApiError extends Error {
   constructor(
     message: string,
