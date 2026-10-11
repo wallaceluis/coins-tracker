@@ -6,6 +6,7 @@ import { confirmationEmail, money, triggeredEmail } from '../email/templates'
 import { isB3Open } from '../market-hours'
 import { parseBrapiResult } from '../quotes/brapi'
 import { ttlMs } from '../quotes/cache'
+import { DEFAULT_TICKERS, TICKER_PATTERN } from '../../shared/stock'
 
 describe('evaluate', () => {
   const above = { condition: 'above' as const, target: 100, triggered: false }
@@ -130,5 +131,17 @@ describe('email templates', () => {
     const email = triggeredEmail({ ...alert, name: '<b>Evil</b>' }, 610000, { unsubscribe: 'u', manage: 'm', view: 'v' })
     expect(email.html).not.toContain('<b>Evil</b>')
     expect(email.subject).toContain('subiu para')
+  })
+})
+
+describe('TICKER_PATTERN', () => {
+  it('accepts every default ticker, including ones with digits like B3SA3', () => {
+    for (const t of DEFAULT_TICKERS) expect(TICKER_PATTERN.test(t)).toBe(true)
+    expect(TICKER_PATTERN.test('PETR4F')).toBe(true)
+    expect(TICKER_PATTERN.test('TAEE11')).toBe(true)
+  })
+
+  it('rejects malformed tickers', () => {
+    for (const t of ['PETR', '3BSA3', 'petr4', 'PETR4;', 'AB12']) expect(TICKER_PATTERN.test(t)).toBe(false)
   })
 })
