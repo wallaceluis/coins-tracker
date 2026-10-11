@@ -35,4 +35,5 @@ export const DEFAULT_TICKERS = [
   'SUZB3',
 ] as const
 
-export const TICKER_PATTERN = /^[A-Z]{4}\d{1,2}[A-Z]?$/
+/** Código B3: 4 caracteres (o 2º ao 4º podem ser dígitos, ex.: B3SA3), 1-2 dígitos e sufixo opcional (F). */
+export const TICKER_PATTERN = /^[A-Z][A-Z0-9]{3}\d{1,2}[A-Z]?$/
