@@ -3,6 +3,22 @@ import { db, hasDatabase } from '../db.js'
 import { isB3Open } from '../market-hours.js'
 import { fetchStock } from './brapi.js'
 
+/** Quantas chamadas à brapi rodam ao mesmo tempo: em rajada ela recusa parte dos papéis. */
+export const BRAPI_CONCURRENCY = 3
+
+/** Busca os papéis em lotes pequenos e registra os que falharam. */
+async function fetchMany(symbols: string[], fetchImpl: typeof fetch) {
+  const results: PromiseSettledResult<StockQuote>[] = []
+  for (let i = 0; i < symbols.length; i += BRAPI_CONCURRENCY) {
+    const batch = symbols.slice(i, i + BRAPI_CONCURRENCY)
+    results.push(...(await Promise.allSettled(batch.map((s) => fetchStock(s, fetchImpl)))))
+  }
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') console.warn('[quotes]', symbols[i], (r.reason as Error).message)
+  })
+  return results
+}
+
 /** Com o pregão aberto a cotação vale por 15 min; fechado, por 6 h. */
 export const ttlMs = (now = new Date()) => (isB3Open(now) ? 15 : 6 * 60) * 60_000
 
@@ -17,7 +33,7 @@ export async function getStocks(
 ): Promise<StockQuote[]> {
   const unique = [...new Set(symbols)]
   if (!hasDatabase()) {
-    const results = await Promise.allSettled(unique.map((s) => fetchStock(s, fetchImpl)))
+    const results = await fetchMany(unique, fetchImpl)
     return results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
   }
 
@@ -32,14 +48,17 @@ export async function getStocks(
     return !row || now.getTime() - new Date(row.fetched_at).getTime() > maxAge
   })
 
-  const fresh = await Promise.allSettled(stale.map((s) => fetchStock(s, fetchImpl)))
+  const fresh = await fetchMany(stale, fetchImpl)
   const updated = new Map<string, StockQuote>()
   fresh.forEach((result, i) => {
     if (result.status === 'fulfilled') updated.set(stale[i]!, result.value)
   })
 
   if (updated.size) {
-    const values = [...updated.values()].map((q) => ({ symbol: q.symbol, data: sql.json(q as never) }))
+    const values = [...updated.values()].map((q) => ({
+      symbol: q.symbol,
+      data: sql.json(q as never),
+    }))
     await sql`
       INSERT INTO quote_cache ${sql(values as never, 'symbol', 'data')}
       ON CONFLICT (symbol) DO UPDATE SET data = EXCLUDED.data, fetched_at = now()

@@ -280,3 +280,17 @@ describe('GET /api/crypto-history', () => {
     expect((await call('?id=Bit%20coin&days=30')).status).toBe(400)
   })
 })
+
+describe('fetchStock retries', () => {
+  it('waits and retries once when brapi rate-limits', async () => {
+    const ok = { results: [{ symbol: 'VALE3', regularMarketPrice: 60 }] }
+    const fetchMock = vi
+      .fn<
+        (url: string) => Promise<Response>
+      >(() => Promise.resolve(new Response(JSON.stringify(ok))))
+      .mockImplementationOnce(() => Promise.resolve(new Response('', { status: 429 })))
+    const quote = await fetchStock('VALE3', fetchMock as unknown as typeof fetch, 0)
+    expect(quote.symbol).toBe('VALE3')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
