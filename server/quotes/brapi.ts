@@ -32,7 +32,11 @@ export function parseBrapiResult(raw: Raw): StockQuote | null {
 
   const time = raw.regularMarketTime
   const updatedAt =
-    typeof time === 'string' ? time : typeof time === 'number' ? new Date(time * 1000).toISOString() : null
+    typeof time === 'string'
+      ? time
+      : typeof time === 'number'
+        ? new Date(time * 1000).toISOString()
+        : null
 
   return {
     symbol,
@@ -58,14 +62,21 @@ export function parseBrapiResult(raw: Raw): StockQuote | null {
  * Busca um papel por requisição: o plano grátis da brapi aceita um ativo por
  * chamada, então paralelizamos e deixamos o cache segurar o volume.
  */
-export async function fetchStock(symbol: string, fetchImpl: typeof fetch = fetch): Promise<StockQuote> {
-  const request = (range: string) => {
+export async function fetchStock(
+  symbol: string,
+  fetchImpl: typeof fetch = fetch,
+  retryDelayMs = 1_000,
+): Promise<StockQuote> {
+  const request = async (range: string) => {
     const params = new URLSearchParams({ range, interval: '1d' })
     const token = env('BRAPI_TOKEN')
     if (token) params.set('token', token)
-    return fetchImpl(`${BASE_URL}/quote/${encodeURIComponent(symbol)}?${params}`, {
-      signal: AbortSignal.timeout(8_000),
-    })
+    const url = `${BASE_URL}/quote/${encodeURIComponent(symbol)}?${params}`
+    const res = await fetchImpl(url, { signal: AbortSignal.timeout(8_000) })
+    if (res.status !== 429) return res
+    // limite por segundo da brapi: espera um pouco e tenta uma vez mais
+    await new Promise((r) => setTimeout(r, retryDelayMs))
+    return fetchImpl(url, { signal: AbortSignal.timeout(8_000) })
   }
 
   // 3 meses é o histórico do plano grátis; se a brapi recusar o período, cai para 1 mês

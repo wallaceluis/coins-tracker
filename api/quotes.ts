@@ -11,7 +11,10 @@ const MAX_TICKERS = 20
 export async function GET(req: Request): Promise<Response> {
   const raw = param(req, 'tickers')
   const tickers = raw
-    ? raw.split(',').map((t) => t.trim().toUpperCase()).filter(Boolean)
+    ? raw
+        .split(',')
+        .map((t) => t.trim().toUpperCase())
+        .filter(Boolean)
     : [...DEFAULT_TICKERS]
 
   if (tickers.length > MAX_TICKERS || tickers.some((t) => !TICKER_PATTERN.test(t))) {
@@ -20,9 +23,12 @@ export async function GET(req: Request): Promise<Response> {
 
   try {
     const quotes = await getStocks(tickers)
+    // Lista completa: 5 min na CDN. Se faltou algum papel, guarda só 30 s para tentar de novo logo
+    const complete = quotes.length === new Set(tickers).size
     return json({ quotes }, 200, {
-      // 5 min na CDN, e serve a versão antiga enquanto revalida
-      'cache-control': 'public, s-maxage=300, stale-while-revalidate=600',
+      'cache-control': complete
+        ? 'public, s-maxage=300, stale-while-revalidate=600'
+        : 'public, s-maxage=30',
     })
   } catch (err) {
     console.error('[quotes]', err)
