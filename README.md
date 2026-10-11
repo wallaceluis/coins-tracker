@@ -43,7 +43,7 @@ flowchart LR
     FE -->|/api/alerts| A[alerts/*.ts]
     C[cron/check-alerts.ts]
   end
-  FE -->|direto| CG[(CoinGecko)]
+  M --> CG[(CoinGecko)]
   Q --> Cache[(Postgres<br/>quote_cache)] --> BR[(brapi.dev)]
   A --> DB[(Postgres<br/>alerts)]
   A --> RS[Resend]
@@ -53,7 +53,7 @@ flowchart LR
 ```
 
 - **Front**: Vue 3 (Composition API), TypeScript, Tailwind CSS 4, VueUse e gráficos em SVG próprio.
-- **API**: funções serverless da Vercel na pasta `api/` (Web `Request`/`Response`). O token da brapi nunca vai para o navegador.
+- **API**: funções serverless da Vercel na pasta `api/` (Web `Request`/`Response`). O token da brapi e a chave da CoinGecko nunca vão para o navegador.
 - **Banco**: Postgres via [`postgres`](https://github.com/porsager/postgres). O esquema é criado sozinho no primeiro acesso (`server/schema.ts`).
 - **Cache de cotações da B3**: 15 min durante o pregão e 6 h fora dele, no Postgres e na CDN da Vercel, para caber no plano grátis da brapi.
 - **Cron**: o GitHub Actions chama `/api/cron/check-alerts` a cada 15 min. Ações só são verificadas no horário do pregão.
@@ -76,6 +76,7 @@ src/                 app Vue (views, components, composables)
    | ---------------- | --------------------------------------------------------- |
    | `DATABASE_URL`   | criada pela integração do Neon                            |
    | `BRAPI_TOKEN`    | token da brapi                                            |
+   | `COINGECKO_API_KEY` | opcional: chave Demo grátis da CoinGecko (mais limite) |
    | `RESEND_API_KEY` | chave do Resend                                           |
    | `ALERTS_FROM`    | `Market Tracker <alertas@wallaceluis.com.br>`             |
    | `APP_URL`        | `https://coins-tracker-taupe.vercel.app`                  |

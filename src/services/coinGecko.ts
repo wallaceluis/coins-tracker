@@ -1,8 +1,5 @@
 import type { Coin, FiatCode } from '@/types/market'
 
-const BASE_URL = 'https://api.coingecko.com/api/v3'
-// Opcional: a API pública funciona sem chave; uma chave "demo" só aumenta o limite.
-const DEMO_KEY = import.meta.env.VITE_COINGECKO_API_KEY as string | undefined
 
 export class ApiError extends Error {
   constructor(
@@ -17,6 +14,7 @@ export class ApiError extends Error {
 /**
  * Top moedas por valor de mercado, já cotadas na moeda fiduciária pedida
  * (a CoinGecko converte do lado dela, sem precisar de API de câmbio).
+ * Passa pela nossa API (/api/markets), que guarda a chave da CoinGecko no servidor.
  */
 export async function fetchMarkets(
   currency: FiatCode,
@@ -25,15 +23,9 @@ export async function fetchMarkets(
 ): Promise<Coin[]> {
   const params = new URLSearchParams({
     vs_currency: currency.toLowerCase(),
-    order: 'market_cap_desc',
     per_page: String(perPage),
-    page: '1',
-    sparkline: 'true',
-    price_change_percentage: '24h,7d',
   })
-  const headers: HeadersInit = DEMO_KEY ? { 'x-cg-demo-api-key': DEMO_KEY } : {}
-
-  const res = await fetch(`${BASE_URL}/coins/markets?${params}`, { headers, signal })
+  const res = await fetch(`/api/markets?${params}`, { signal })
   if (!res.ok) {
     throw new ApiError(res.status === 429 ? 'rate_limited' : 'request_failed', res.status)
   }
