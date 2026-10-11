@@ -23,8 +23,8 @@ Painel de **criptomoedas e ações da B3** com gráficos, conversor e **alertas 
 ## Funcionalidades
 
 - **Duas abas**:
-  - **Cripto**: top 20 da CoinGecko, gráfico de 7 dias, cotação em BRL, USD, EUR, GBP ou JPY.
-  - **Bolsa**: principais ações da B3 pela brapi.dev, com gráfico do último mês, máximas e mínimas do dia e de 52 semanas.
+  - **Cripto**: top 20 da CoinGecko, gráfico de 7 dias, 1 mês, 3 meses ou 1 ano, cotação em BRL, USD, EUR, GBP ou JPY.
+  - **Bolsa**: principais ações da B3 pela brapi.dev, mais as que a pessoa adicionar pela busca (salvas no navegador), com gráfico de 7 dias, 1 mês ou 3 meses, máximas e mínimas do dia e de 52 semanas.
 - **Alertas por e-mail** ("avise quando PETR4 cair para R$ 36"):
   - Sem cadastro, com confirmação por e-mail (double opt-in): ninguém consegue inscrever o e-mail de outra pessoa.
   - Dispara uma vez ao cruzar o alvo e só rearma quando o preço volta com folga de 0,5%, então não chega um e-mail a cada oscilação.

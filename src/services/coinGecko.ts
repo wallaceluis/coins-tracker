@@ -30,3 +30,22 @@ export async function fetchMarkets(
   }
   return (await res.json()) as Coin[]
 }
+
+/** Preços de uma moeda em 30 dias, 3 meses ou 1 ano (/api/crypto-history). */
+export async function fetchCryptoHistory(
+  id: string,
+  currency: FiatCode,
+  days: number,
+  signal?: AbortSignal,
+): Promise<number[]> {
+  const params = new URLSearchParams({
+    id,
+    vs_currency: currency.toLowerCase(),
+    days: String(days),
+  })
+  const res = await fetch(`/api/crypto-history?${params}`, { signal })
+  if (!res.ok) {
+    throw new ApiError(res.status === 429 ? 'rate_limited' : 'request_failed', res.status)
+  }
+  return ((await res.json()) as { prices: number[] }).prices
+}

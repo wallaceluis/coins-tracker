@@ -13,8 +13,10 @@ export interface StockQuote {
   previousClose: number | null
   fiftyTwoWeekHigh: number | null
   fiftyTwoWeekLow: number | null
-  /** Fechamentos diários do último mês, do mais antigo ao mais recente */
+  /** Fechamentos diários dos últimos 3 meses (ou 1 mês), do mais antigo ao mais recente */
   history: number[]
+  /** Datas (unix, segundos) de cada ponto de `history`; ausente em cotações antigas do cache */
+  historyDates?: number[]
   /** ISO 8601 do último negócio */
   updatedAt: string | null
 }
