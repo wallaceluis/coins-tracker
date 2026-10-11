@@ -1,14 +1,25 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { MagnifyingGlassIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { TICKER_PATTERN } from '../../shared/stock'
 import type { Asset } from '@/types/asset'
 import { formatPrice } from '@/utils/formatters'
 import ChangeBadge from './ChangeBadge.vue'
 import SparkLine from './SparkLine.vue'
 
-const props = defineProps<{ assets: Asset[]; loading: boolean; hint: string }>()
+const props = defineProps<{
+  assets: Asset[]
+  loading: boolean
+  hint: string
+  /** Aba Bolsa: a busca também adiciona um ticker que não está na lista */
+  addable?: boolean
+  /** ids que a pessoa adicionou e pode remover */
+  removable?: string[]
+  placeholder?: string
+}>()
 const selectedId = defineModel<string>('selectedId', { required: true })
+const emit = defineEmits<{ add: [ticker: string]; remove: [id: string] }>()
 
 const { t, locale } = useI18n()
 const query = ref('')
@@ -20,6 +31,20 @@ const filtered = computed(() => {
     (a) => a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q),
   )
 })
+
+/** Ticker digitado que ainda não está na lista e pode ser adicionado */
+const candidate = computed(() => {
+  if (!props.addable) return null
+  const ticker = query.value.trim().toUpperCase()
+  if (!TICKER_PATTERN.test(ticker) || props.assets.some((a) => a.symbol === ticker)) return null
+  return ticker
+})
+
+function add() {
+  if (!candidate.value) return
+  emit('add', candidate.value)
+  query.value = ''
+}
 </script>
 
 <template>
@@ -35,7 +60,8 @@ const filtered = computed(() => {
         <input
           v-model="query"
           type="search"
-          :placeholder="t('search')"
+          :placeholder="placeholder ?? t('search')"
+          @keydown.enter.prevent="add"
           class="field pl-9 py-2 text-sm"
         />
       </label>
@@ -57,12 +83,19 @@ const filtered = computed(() => {
         </li>
       </template>
 
-      <li v-for="(asset, index) in filtered" :key="asset.id">
+      <li v-if="candidate">
+        <button type="button" class="row text-accent font-medium" @click="add">
+          <PlusIcon class="w-5 h-5" />
+          <span class="flex-1 text-left">{{ t('addTicker', { ticker: candidate }) }}</span>
+        </button>
+      </li>
+
+      <li v-for="(asset, index) in filtered" :key="asset.id" class="flex items-center gap-1">
         <button
           type="button"
           role="option"
           :aria-selected="asset.id === selectedId"
-          class="row"
+          class="row min-w-0"
           :class="{ selected: asset.id === selectedId }"
           @click="selectedId = asset.id"
         >
@@ -102,10 +135,20 @@ const filtered = computed(() => {
             <ChangeBadge :value="asset.changeDay" />
           </span>
         </button>
+        <button
+          v-if="removable?.includes(asset.id)"
+          type="button"
+          class="icon-btn shrink-0"
+          :aria-label="t('removeTicker', { ticker: asset.symbol })"
+          :title="t('removeTicker', { ticker: asset.symbol })"
+          @click="emit('remove', asset.id)"
+        >
+          <XMarkIcon class="w-4 h-4" />
+        </button>
       </li>
 
       <li
-        v-if="!loading && assets.length && !filtered.length"
+        v-if="!loading && assets.length && !filtered.length && !candidate"
         class="p-6 text-center text-sm text-muted"
       >
         {{ t('noResults') }}

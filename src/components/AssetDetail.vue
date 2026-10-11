@@ -2,13 +2,19 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BellAlertIcon } from '@heroicons/vue/24/outline'
-import type { Asset } from '@/types/asset'
+import type { Asset, PeriodDays } from '@/types/asset'
 import { formatCompact, formatCompactNumber, formatPrice } from '@/utils/formatters'
 import ChangeBadge from './ChangeBadge.vue'
 import SparkLine from './SparkLine.vue'
 
-const props = defineProps<{ asset: Asset; alertsEnabled: boolean }>()
+const props = defineProps<{
+  asset: Asset
+  alertsEnabled: boolean
+  periods: PeriodDays[]
+  historyLoading?: boolean
+}>()
 defineEmits<{ createAlert: [] }>()
+const period = defineModel<PeriodDays>('period', { required: true })
 const { t, locale } = useI18n()
 
 const range = computed(() => {
@@ -76,21 +82,39 @@ const stats = computed(() => {
         <div class="flex items-center gap-2 mt-1.5 sm:justify-end text-xs text-muted">
           <span>{{ t('changeDay') }}</span>
           <ChangeBadge :value="asset.changeDay" size="md" />
-          <span>{{ t(asset.historyDays === 7 ? 'change7d' : 'change30d') }}</span>
+          <span>{{ t(`period.d${asset.historyDays}`) }}</span>
           <ChangeBadge :value="asset.changePeriod" size="md" />
         </div>
       </div>
     </div>
 
     <figure class="mt-6">
-      <figcaption class="flex justify-between text-xs text-muted mb-2">
-        <span>{{ t(asset.historyDays === 7 ? 'chart7d' : 'chart30d') }}</span>
+      <figcaption class="flex flex-wrap items-center justify-between gap-2 text-xs text-muted mb-2">
+        <span>{{ t(`chartPeriod.d${asset.historyDays}`) }}</span>
         <span v-if="range" class="tabular-nums">
           {{ formatPrice(range.min, asset.currency, locale) }} –
           {{ formatPrice(range.max, asset.currency, locale) }}
         </span>
+        <div role="radiogroup" :aria-label="t('periodLabel')" class="tabs tabs-sm">
+          <button
+            v-for="p in periods"
+            :key="p"
+            type="button"
+            role="radio"
+            :aria-checked="period === p"
+            :aria-label="t(`period.d${p}`)"
+            :class="{ active: period === p }"
+            @click="period = p"
+          >
+            {{ t(`periodShort.d${p}`) }}
+          </button>
+        </div>
       </figcaption>
-      <div class="h-48 sm:h-56 rounded-xl bg-chart p-2">
+      <div
+        class="h-48 sm:h-56 rounded-xl bg-chart p-2 transition-opacity"
+        :class="{ 'opacity-50': historyLoading }"
+        :aria-busy="historyLoading"
+      >
         <SparkLine
           :points="asset.history"
           :width="600"
@@ -114,7 +138,8 @@ const stats = computed(() => {
       class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-accent/5 border border-accent/20 p-4"
     >
       <p class="text-sm">
-        <span class="font-semibold">{{ t('alertCtaTitle') }}</span>&nbsp;<span class="text-muted">{{ t('alertCtaText', { symbol: asset.symbol }) }}</span>
+        <span class="font-semibold">{{ t('alertCtaTitle') }}</span
+        >&nbsp;<span class="text-muted">{{ t('alertCtaText', { symbol: asset.symbol }) }}</span>
       </p>
       <button
         type="button"

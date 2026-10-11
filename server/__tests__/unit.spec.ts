@@ -5,7 +5,9 @@ import { evaluate } from '../alerts/evaluate'
 import { validateAlertInput } from '../alerts/validate'
 import { confirmationEmail, money, triggeredEmail } from '../email/templates'
 import { isB3Open } from '../market-hours'
-import { parseBrapiResult } from '../quotes/brapi'
+import { fetchStock, parseBrapiResult } from '../quotes/brapi'
+import { downsample } from '../quotes/coingecko'
+import { GET as getCryptoHistory } from '../../api/crypto-history'
 import { ttlMs } from '../quotes/cache'
 import { DEFAULT_TICKERS, TICKER_PATTERN } from '../../shared/stock'
 
@@ -33,12 +35,25 @@ describe('evaluate', () => {
 })
 
 describe('validateAlertInput', () => {
-  const base = { email: ' Wallace@Example.com ', kind: 'stock', symbol: 'petr4', condition: 'below', target: '35.5' }
+  const base = {
+    email: ' Wallace@Example.com ',
+    kind: 'stock',
+    symbol: 'petr4',
+    condition: 'below',
+    target: '35.5',
+  }
 
   it('normalizes a valid stock alert (BRL forced)', () => {
     expect(validateAlertInput({ ...base, currency: 'USD' })).toEqual({
       ok: true,
-      value: { email: 'wallace@example.com', kind: 'stock', symbol: 'PETR4', condition: 'below', target: 35.5, currency: 'BRL' },
+      value: {
+        email: 'wallace@example.com',
+        kind: 'stock',
+        symbol: 'PETR4',
+        condition: 'below',
+        target: 35.5,
+        currency: 'BRL',
+      },
     })
   })
 
@@ -115,7 +130,15 @@ describe('parseBrapiResult', () => {
 })
 
 describe('email templates', () => {
-  const alert = { kind: 'crypto' as const, symbol: 'bitcoin', ticker: 'btc', name: 'Bitcoin', condition: 'above' as const, target: 600000, currency: 'BRL' }
+  const alert = {
+    kind: 'crypto' as const,
+    symbol: 'bitcoin',
+    ticker: 'btc',
+    name: 'Bitcoin',
+    condition: 'above' as const,
+    target: 600000,
+    currency: 'BRL',
+  }
 
   it('formats money in pt-BR', () => {
     expect(money(1234.5, 'BRL').replace(/ /g, ' ')).toBe('R$ 1.234,50')
@@ -129,7 +152,11 @@ describe('email templates', () => {
   })
 
   it('escapes names in the triggered email', () => {
-    const email = triggeredEmail({ ...alert, name: '<b>Evil</b>' }, 610000, { unsubscribe: 'u', manage: 'm', view: 'v' })
+    const email = triggeredEmail({ ...alert, name: '<b>Evil</b>' }, 610000, {
+      unsubscribe: 'u',
+      manage: 'm',
+      view: 'v',
+    })
     expect(email.html).not.toContain('<b>Evil</b>')
     expect(email.subject).toContain('subiu para')
   })
@@ -143,7 +170,8 @@ describe('TICKER_PATTERN', () => {
   })
 
   it('rejects malformed tickers', () => {
-    for (const t of ['PETR', '3BSA3', 'petr4', 'PETR4;', 'AB12']) expect(TICKER_PATTERN.test(t)).toBe(false)
+    for (const t of ['PETR', '3BSA3', 'petr4', 'PETR4;', 'AB12'])
+      expect(TICKER_PATTERN.test(t)).toBe(false)
   })
 })
 
@@ -152,7 +180,9 @@ describe('GET /api/markets', () => {
   const call = (qs: string) => getMarkets(new Request(`https://x.test/api/markets${qs}`))
 
   it('proxies CoinGecko with a CDN cache header', async () => {
-    const fetchMock = vi.fn(() => Promise.resolve(new Response('[{"id":"bitcoin"}]', { status: 200 })))
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response('[{"id":"bitcoin"}]', { status: 200 })),
+    )
     vi.stubGlobal('fetch', fetchMock)
 
     const res = await call('?vs_currency=USD&per_page=20')
@@ -170,8 +200,83 @@ describe('GET /api/markets', () => {
   })
 
   it('passes rate limiting through as 429', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('', { status: 429 }))))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('', { status: 429 }))),
+    )
     vi.spyOn(console, 'error').mockImplementation(() => {})
     expect((await call('')).status).toBe(429)
+  })
+})
+
+describe('fetchStock', () => {
+  const body = {
+    results: [
+      {
+        symbol: 'PETR4',
+        regularMarketPrice: 40,
+        historicalDataPrice: [
+          { date: 200, close: 41 },
+          { date: 100, close: 40 },
+        ],
+      },
+    ],
+  }
+
+  it('asks for 3 months and keeps the dates of each close', async () => {
+    const fetchMock = vi.fn<(url: string) => Promise<Response>>(() =>
+      Promise.resolve(new Response(JSON.stringify(body))),
+    )
+    const quote = await fetchStock('PETR4', fetchMock as unknown as typeof fetch)
+    expect(fetchMock.mock.calls[0]![0]).toContain('range=3mo')
+    expect(quote.history).toEqual([40, 41])
+    expect(quote.historyDates).toEqual([100, 200])
+  })
+
+  it('falls back to 1 month when the plan refuses the range', async () => {
+    const fetchMock = vi
+      .fn<
+        (url: string) => Promise<Response>
+      >(() => Promise.resolve(new Response(JSON.stringify(body))))
+      .mockImplementationOnce(() => Promise.resolve(new Response('', { status: 403 })))
+    await fetchStock('PETR4', fetchMock as unknown as typeof fetch)
+    expect(fetchMock.mock.calls[1]![0]).toContain('range=1mo')
+  })
+})
+
+describe('downsample', () => {
+  it('keeps short series and caps long ones, preserving the ends', () => {
+    expect(downsample([1, 2, 3], 5)).toEqual([1, 2, 3])
+    const long = Array.from({ length: 1000 }, (_, i) => i)
+    const out = downsample(long, 10)
+    expect(out).toHaveLength(10)
+    expect(out[0]).toBe(0)
+    expect(out[9]).toBe(999)
+  })
+})
+
+describe('GET /api/crypto-history', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const call = (qs: string) =>
+    getCryptoHistory(new Request(`https://x.test/api/crypto-history${qs}`))
+
+  it('returns the price series for a valid period', async () => {
+    const prices = [
+      [1, 10],
+      [2, 11],
+    ]
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify({ prices })))),
+    )
+    const res = await call('?id=bitcoin&vs_currency=brl&days=90')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ prices: [10, 11] })
+  })
+
+  it('rejects unsupported periods and ids', async () => {
+    vi.stubGlobal('fetch', vi.fn())
+    expect((await call('?id=bitcoin&days=7')).status).toBe(400)
+    expect((await call('?id=Bit%20coin&days=30')).status).toBe(400)
   })
 })

@@ -23,12 +23,11 @@ export function parseBrapiResult(raw: Raw): StockQuote | null {
   const price = num(raw.regularMarketPrice)
   if (!symbol || price === null) return null
 
-  const history = Array.isArray(raw.historicalDataPrice)
+  const points = Array.isArray(raw.historicalDataPrice)
     ? (raw.historicalDataPrice as Raw[])
         .map((p) => ({ date: num(p.date) ?? 0, close: num(p.close) }))
         .filter((p): p is { date: number; close: number } => p.close !== null)
         .sort((a, b) => a.date - b.date)
-        .map((p) => p.close)
     : []
 
   const time = raw.regularMarketTime
@@ -49,7 +48,8 @@ export function parseBrapiResult(raw: Raw): StockQuote | null {
     previousClose: num(raw.regularMarketPreviousClose),
     fiftyTwoWeekHigh: num(raw.fiftyTwoWeekHigh),
     fiftyTwoWeekLow: num(raw.fiftyTwoWeekLow),
-    history,
+    history: points.map((p) => p.close),
+    historyDates: points.map((p) => p.date),
     updatedAt,
   }
 }
@@ -59,13 +59,18 @@ export function parseBrapiResult(raw: Raw): StockQuote | null {
  * chamada, então paralelizamos e deixamos o cache segurar o volume.
  */
 export async function fetchStock(symbol: string, fetchImpl: typeof fetch = fetch): Promise<StockQuote> {
-  const params = new URLSearchParams({ range: '1mo', interval: '1d' })
-  const token = env('BRAPI_TOKEN')
-  if (token) params.set('token', token)
+  const request = (range: string) => {
+    const params = new URLSearchParams({ range, interval: '1d' })
+    const token = env('BRAPI_TOKEN')
+    if (token) params.set('token', token)
+    return fetchImpl(`${BASE_URL}/quote/${encodeURIComponent(symbol)}?${params}`, {
+      signal: AbortSignal.timeout(8_000),
+    })
+  }
 
-  const res = await fetchImpl(`${BASE_URL}/quote/${encodeURIComponent(symbol)}?${params}`, {
-    signal: AbortSignal.timeout(8_000),
-  })
+  // 3 meses é o histórico do plano grátis; se a brapi recusar o período, cai para 1 mês
+  let res = await request('3mo')
+  if (res.status === 400 || res.status === 401 || res.status === 403) res = await request('1mo')
   if (res.status === 404) throw new QuoteError(`Ticker ${symbol} not found`, 404)
   if (!res.ok) throw new QuoteError(`brapi responded ${res.status}`, res.status)
 

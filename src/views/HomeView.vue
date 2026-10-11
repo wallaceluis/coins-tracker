@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useStorage } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { ArrowPathIcon, BellAlertIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { useMarket } from '@/composables/useMarket'
-import { useStocks } from '@/composables/useStocks'
+import { MAX_EXTRA_TICKERS, useStocks } from '@/composables/useStocks'
+import { useCryptoHistory } from '@/composables/useCryptoHistory'
 import { useTheme } from '@/composables/useTheme'
-import { coinToAsset, stockToAsset, type AssetKind } from '@/types/asset'
+import {
+  coinToAsset,
+  CRYPTO_PERIODS,
+  stockToAsset,
+  STOCK_PERIODS,
+  type AssetKind,
+  type PeriodDays,
+} from '@/types/asset'
 import TheHeader from '@/components/TheHeader.vue'
 import MarketList from '@/components/MarketList.vue'
 import AssetDetail from '@/components/AssetDetail.vue'
@@ -19,6 +28,18 @@ const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
 const crypto = useMarket()
 const stocks = useStocks()
+
+// Período do gráfico de cada aba, lembrado no navegador
+const cryptoPeriod = useStorage<PeriodDays>('ct:crypto-period', 7)
+const stockPeriod = useStorage<PeriodDays>('ct:stock-period', 30)
+if (!CRYPTO_PERIODS.includes(cryptoPeriod.value)) cryptoPeriod.value = 7
+if (!STOCK_PERIODS.includes(stockPeriod.value)) stockPeriod.value = 30
+const cryptoHistory = useCryptoHistory(crypto.selectedId, crypto.currency, cryptoPeriod)
+const period = computed({
+  get: () => (tab.value === 'crypto' ? cryptoPeriod.value : stockPeriod.value),
+  set: (days: PeriodDays) =>
+    tab.value === 'crypto' ? (cryptoPeriod.value = days) : (stockPeriod.value = days),
+})
 
 const alertsEnabled = import.meta.env.VITE_ALERTS_ENABLED !== 'false'
 const alertOpen = ref(false)
@@ -38,10 +59,42 @@ const active = computed(() => (tab.value === 'crypto' ? crypto : stocks))
 const assets = computed(() =>
   tab.value === 'crypto'
     ? crypto.coins.value.map((c) => coinToAsset(c, crypto.currency.value))
-    : stocks.quotes.value.map(stockToAsset),
+    : stocks.quotes.value.map((q) => stockToAsset(q)),
 )
 const selected = computed(
   () => assets.value.find((a) => a.id === active.value.selectedId.value) ?? null,
+)
+
+// O detalhe usa o período escolhido; a lista segue com a série curta
+const detail = computed(() => {
+  if (tab.value === 'crypto') {
+    const coin = crypto.coins.value.find((c) => c.id === crypto.selectedId.value)
+    if (!coin) return null
+    const prices = cryptoHistory.prices.value
+    return coinToAsset(
+      coin,
+      crypto.currency.value,
+      prices ? { days: cryptoPeriod.value, prices } : null,
+    )
+  }
+  const quote = stocks.quotes.value.find((q) => q.symbol === stocks.selectedId.value)
+  return quote ? stockToAsset(quote, stockPeriod.value) : null
+})
+const historyLoading = computed(() => tab.value === 'crypto' && cryptoHistory.loading.value)
+
+const addMessage = ref<string | null>(null)
+function addTicker(ticker: string) {
+  addMessage.value = stocks.addTicker(ticker)
+    ? null
+    : stocks.extraTickers.value.length >= MAX_EXTRA_TICKERS
+      ? t('tickerLimit', { max: MAX_EXTRA_TICKERS })
+      : null
+}
+const tickerNotice = computed(() =>
+  tab.value !== 'stock'
+    ? null
+    : (addMessage.value ??
+      (stocks.notFound.value ? t('tickerNotFound', { ticker: stocks.notFound.value }) : null)),
 )
 const selectedId = computed({
   get: () => active.value.selectedId.value,
@@ -124,9 +177,12 @@ watch(selectedId, () => {
 
       <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
         <div class="space-y-6 min-w-0">
-          <template v-if="selected">
+          <template v-if="selected && detail">
             <AssetDetail
-              :asset="selected"
+              v-model:period="period"
+              :asset="detail"
+              :periods="tab === 'crypto' ? CRYPTO_PERIODS : STOCK_PERIODS"
+              :history-loading="historyLoading"
               :alerts-enabled="alertsEnabled"
               @create-alert="alertOpen = true"
             />
@@ -150,11 +206,31 @@ watch(selectedId, () => {
         </div>
 
         <div class="lg:sticky lg:top-6">
+          <p
+            v-if="tickerNotice"
+            role="status"
+            class="panel mb-3 p-3 text-sm text-muted flex items-start justify-between gap-2"
+          >
+            <span>{{ tickerNotice }}</span>
+            <button
+              type="button"
+              class="text-xs underline shrink-0"
+              @click="((addMessage = null), (stocks.notFound.value = null))"
+            >
+              {{ t('ok') }}
+            </button>
+          </p>
           <MarketList
+            :key="tab"
             v-model:selected-id="selectedId"
             :assets="assets"
             :loading="active.loading.value"
             :hint="t(tab === 'crypto' ? 'marketHint' : 'stocksHint')"
+            :addable="tab === 'stock'"
+            :removable="tab === 'stock' ? stocks.extraTickers.value : []"
+            :placeholder="tab === 'stock' ? t('searchStocks') : undefined"
+            @add="addTicker"
+            @remove="stocks.removeTicker"
           />
         </div>
       </div>
